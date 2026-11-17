@@ -45,3 +45,10 @@ Login restrito: só entram os e-mails que você criar.
 
 ## Para trocar senha ou tirar acesso
 Supabase → **Authentication → Users** → o usuário → *Reset password* ou *Delete user*.
+
+## Notificações (iPhone: só com o app na Tela de Início, iOS 16.4+)
+- Ative em ⚙︎ Ajustes → **Ativar avisos neste aparelho** (em cada celular).
+- Avisa quando o outro lança gasto, receita, caixinha ou paga conta (pelo app ou pela Siri).
+- Todo dia às 9h: contas que vencem amanhã/hoje/atrasadas, dia de salário, ritmo do mês.
+- Domingo às 20h: resumo da semana.
+- Peças: `push-function.ts` (função `push`), `push.sql` (tabelas e agendamentos), `sw.js`.

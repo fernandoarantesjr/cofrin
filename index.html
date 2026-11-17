@@ -252,6 +252,7 @@ input,select{font:inherit;color:inherit}
       <div class="sub" id="of"></div>
       <div class="chip" id="pace"><i></i><span></span></div>
     </div>
+    <div id="notifCard"></div>
     <div class="card ponte" id="ponte"></div>
     <div class="card" id="entradas"></div>
     <div class="card"><h3>Lançamentos do mês <span id="count"></span></h3><div id="list"></div></div>
@@ -346,11 +347,53 @@ async function entrar(e){e.preventDefault();const b=document.getElementById('lbt
  const {error}=await sb.auth.signInWithPassword({email:document.getElementById('lemail').value.trim().toLowerCase(),password:document.getElementById('lsenha').value});
  b.disabled=false;b.textContent='Entrar';if(error)msg.textContent='E-mail ou senha errados.'}
 async function sair(){await sb.auth.signOut();try{localStorage.removeItem(LKEY)}catch(e){}location.reload()}
+
+/* ---------- notificações (Web Push) ---------- */
+let EMAIL='';
+const b64ToU8=b=>{const p='='.repeat((4-b.length%4)%4),r=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...r].map(c=>c.charCodeAt(0)))};
+const ehIOS=/iPhone|iPad|iPod/.test(navigator.userAgent),instalado=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const temPush='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+async function minhaAssinatura(){try{const r=await navigator.serviceWorker.getRegistration();return r&&await r.pushManager.getSubscription()}catch(e){return null}}
+async function enviaPush(title,body,url){if(!sb||!logado)return;try{const s=await minhaAssinatura();await sb.functions.invoke('push',{body:{acao:'avisar',title,body,url,excluir:s&&s.endpoint}})}catch(e){}}
+let notifOn=null;
+async function checaNotif(){notifOn=temPush&&Notification.permission==='granted'&&!!(await minhaAssinatura());if(view==='inicio')extraInicio()}
+function extraInicio(){
+ const el=document.getElementById('notifCard');if(!el)return;
+ let dispensou=false;try{dispensou=localStorage.getItem('cofrin.notifx')==='1'}catch(e){}
+ if(notifOn!==false||dispensou||!logado){el.innerHTML='';return}
+ el.innerHTML=`<div class="card" style="margin-top:16px;display:flex;gap:12px;align-items:center"><div style="font-size:26px">🔔</div><div style="flex:1"><b style="font-size:14px">Ativar avisos</b><div style="font-size:12px;color:var(--mute)">Saiba quando o outro lançar um gasto, contas vencendo e resumo da semana.</div></div><button class="mini" onclick="openSheet('ajustes')">Ativar</button><button class="x" style="color:#aaa;padding:4px" onclick="try{localStorage.setItem('cofrin.notifx','1')}catch(e){};extraInicio()">✕</button></div>`;
+}
+function notifUI(){
+ let corpo;
+ if(ehIOS&&!instalado)corpo=`<p class="vozh" style="margin:0">No iPhone os avisos só funcionam com o Cofrin na tela inicial: toque em <b>Compartilhar</b> → <b>Adicionar à Tela de Início</b>, abra pelo ícone do porquinho e volte aqui.</p>`;
+ else if(!temPush)corpo=`<p class="vozh" style="margin:0">Este navegador não aceita notificações.</p>`;
+ else if(notifOn)corpo=`<p class="vozh" style="margin:0 0 8px">✅ Ativadas neste aparelho.</p><button class="cta alt" style="margin:0" onclick="testaPush(this)">Mandar um teste</button>`;
+ else if(Notification.permission==='denied')corpo=`<p class="vozh" style="margin:0">Você bloqueou os avisos. Libere em Ajustes do iPhone → Notificações → Cofrin.</p>`;
+ else corpo=`<button class="cta" style="margin:0" onclick="ativarPush(this)">🔔 Ativar avisos neste aparelho</button>`;
+ return `<div class="card" style="margin-top:14px"><h3>Notificações</h3>${corpo}<p class="vozh" style="margin:8px 0 0">Avisa quando o outro lançar, contas vencendo, dia de salário, ritmo do mês e resumo de domingo.</p></div>`;
+}
+async function ativarPush(btn){
+ btn.disabled=true;btn.textContent='Ativando…';
+ try{
+  const perm=await Notification.requestPermission();   // precisa ser logo no toque
+  if(perm!=='granted'){btn.textContent='Permissão negada';return}
+  const {data,error}=await sb.functions.invoke('push',{body:{acao:'chave'}});if(error||!data?.pub)throw error||new Error('sem chave');
+  const reg=await navigator.serviceWorker.ready;
+  let s=await reg.pushManager.getSubscription();
+  if(!s)s=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(data.pub)});
+  const {error:e2}=await sb.from('cofrin_push').upsert({endpoint:s.endpoint,email:EMAIL,sub:s.toJSON()});if(e2)throw e2;
+  await sb.functions.invoke('push',{body:{acao:'avisar',title:'🐷 Avisos ligados!',body:'Agora eu te conto tudo. Tudo mesmo.',so:s.endpoint}});
+  notifOn=true;openSheet('ajustes');extraInicio();
+ }catch(e){btn.disabled=false;btn.textContent='Não deu. Tentar de novo';console.error(e)}
+}
+async function testaPush(btn){const s=await minhaAssinatura();if(!s)return;btn.textContent='Enviado!';sb.functions.invoke('push',{body:{acao:'avisar',title:'🐷 Teste do Cofrin',body:'Se você está lendo isso, os avisos funcionam.',so:s.endpoint}})}
+
 setTimeout(()=>{
  if(!sb){document.getElementById('login').style.display='flex';document.getElementById('lmsg').textContent='Falta conectar o Supabase.';return}
  sb.auth.onAuthStateChange((_e,session)=>{const ok=!!session;
   document.getElementById('login').style.display=ok?'none':'flex';
-  if(ok&&!logado){logado=true;carregar();if(!onb)document.getElementById('onb').style.display='flex';else if(atalho)setTimeout(()=>openLancar(null,null,atalho==='falar'?{ouvir:true}:null),300)}})},0);
+  if(ok){EMAIL=session.user.email||'';const n=EMAIL.split('@')[0];QUEM=n.charAt(0).toUpperCase()+n.slice(1)}
+  if(ok&&!logado){logado=true;carregar();checaNotif();if(!onb)document.getElementById('onb').style.display='flex';else if(atalho)setTimeout(()=>openLancar(null,null,atalho==='falar'?{ouvir:true}:null),300)}})},0);
 const saveMes=m=>nuvem('meses/'+m,S.meses[m]);
 const saveCfg=()=>nuvem('config/geral',S.cfg);
 
@@ -529,6 +572,7 @@ function rInicio(m){
  const arg={cheio:fmt(c.M.limite),estourou:fmt(-c.resta),passado:fmt(c.resta)}[c.estado]||fmt(pp&&!pp.atrasada?Math.min(pp.porDia,c.porDia):c.porDia);
  document.getElementById('bubble').textContent=falaExtra||(pp&&!pp.atrasada&&pp.livre<0?`Faltam ${fmt(-pp.livre)} pras contas até ${pp.r.nome} receber. Segura a carteira.`:pick(FALAS[c.estado](arg)));
  falaExtra=null;faceExtra=null;
+ window.extraInicio&&extraInicio();
  const pe=document.getElementById('ponte');pe.style.display=pp?'':'none';
  if(pp){const [,mm,d2]=pp.data.split('-');
   pe.innerHTML=pp.atrasada?`<h3>Entrada do dia ${+d2}</h3><div class="dia">${esc(pp.r.nome)} ainda não lançou</div><div class="row"><span>Em caixa agora</span><span>${fmt(pp.cx)}</span></div><button class="cta alt" style="margin-top:8px" onclick="openLancar(null,null,{tipo:'receita',renda:'${pp.r.id}'})">Lançar o que caiu</button>`
@@ -684,6 +728,7 @@ function salvaLancar(){
   Object.assign(t,{type:L.cxModo,cx:L.cx,valor:L.valor})}
  if(L.edit){const old=mes(L.edit.m).tx.find(x=>x.id===L.edit.id);if(old&&old.grupo){t.grupo=old.grupo;t.par=old.par;t.desc=t.desc||old.desc}tiraTx(L.edit.m,L.edit.id)}
  gravaTx(t,L.edit?1:L.par);
+ if(!L.edit)aviso([{...t,par:L.par}]);
  closeSheet();
  if(!L.edit){
   if(t.type==='gasto'){const lim=mes(t.date.slice(0,7)).limite;if(t.valor>=lim*.25){falaExtra=pick(FALAS.grande);faceExtra='choque'}else if(t.cat==='Delivery'){falaExtra=pick(FALAS.delivery);faceExtra='julga'}}
@@ -692,6 +737,17 @@ function salvaLancar(){
   if(view!=='caixinhas'){view='inicio';cur=new Date(t.date.slice(0,7)+'-15');cur.setDate(1)}
  }
  render();if(!L.edit&&view==='inicio')(sinal(t)>0||t.type==='guardar'?coinIn:coinOut)();
+}
+/* avisa o outro celular (na versão com login) */
+let QUEM='';
+function aviso(itens){
+ if(!window.enviaPush||!itens.length)return;
+ const q=QUEM||'Alguém',cx=id=>(S.cfg.caixinhas.find(c=>c.id===id)||{}).nome||'caixinha';
+ const linha=t=>t.type==='gasto'?`${catE(t.cat)} ${t.desc||t.cat} · ${fmt(t.valor)}${t.par>1?' em '+t.par+'x':''}`:t.type==='receita'?`💰 ${t.desc||'Receita'} · ${fmt(t.valor)}`:t.type==='guardar'?`🐷 ${cx(t.cx)} · ${fmt(t.valor)}`:t.type==='resgatar'?`↩️ ${cx(t.cx)} · ${fmt(t.valor)}`:`✅ ${t.nome} · ${fmt(t.valor)}`;
+ const tp=itens[0].type;
+ const title=itens.length>1?`${q} lançou ${itens.length} itens`:tp==='gasto'?`${q} lançou um gasto`:tp==='receita'?`${q} lançou uma receita`:tp==='guardar'?`${q} guardou dinheiro`:tp==='resgatar'?`${q} resgatou da caixinha`:`${q} pagou uma conta`;
+ const c=calc(ym(new Date()));
+ enviaPush(title,itens.map(linha).join('\n')+(itens.some(t=>t.type==='gasto')?`\nRestam ${fmt(Math.max(0,c.resta))} no mês.`:''),tp==='pago'?'./#contas':'./#inicio');
 }
 function gravaTx(t,par){
  const lista=[];
@@ -823,6 +879,7 @@ function vozSalva(){
  const pend=VZ.find(t=>t.falta);if(pend)return vozAjusta(VZ.indexOf(pend));
  const ult=VZ[VZ.length-1];
  VZ.forEach(t=>{const {par,falta,...x}=t;x.id=uid();if(x.type==='receita'&&!x.renda)delete x.renda;gravaTx(x,par||1)});
+ aviso(VZ);
  const n=VZ.length;VZ=[];closeSheet();
  if(ult.type==='gasto'&&ult.cat==='Delivery'){falaExtra=pick(FALAS.delivery);faceExtra='julga'}
  else{falaExtra=n>1?`Anotei ${n} lançamentos. De nada.`:ult.type==='gasto'?'Anotado. Tô de olho.':pick(FALAS[ult.type==='receita'?'receita':'guardar']);faceExtra=ult.type==='gasto'?'ok':'feliz'}
@@ -871,6 +928,7 @@ function openSheet(kind,id){
    <p class="lbl" style="margin-top:6px">Quem recebe · dia · quanto costuma cair (₲)</p>
    ${S.cfg.rendas.map((r,i)=>`<div class="two" style="grid-template-columns:1.2fr .6fr 1.2fr"><input class="field" id="rn${i}" value="${esc(r.nome)}"><input class="field" id="rd${i}" inputmode="numeric" value="${r.dia}"><input class="field" id="re${i}" inputmode="numeric" placeholder="previsto" value="${r.estimado?r.estimado.toLocaleString('pt-BR'):''}" oninput="mascara(this)"></div>`).join('')}
    <button class="cta" onclick="salvarAjustes()">Salvar</button>
+   ${window.notifUI?notifUI():''}
    <button class="cta del" onclick="sair()">Sair da conta</button>`;
  }
  abrir();
@@ -888,7 +946,7 @@ function salvaFixo(){
 }
 function apagaFixo(id){const m=ym(cur);[m,...Object.keys(S.meses).filter(k=>k>m)].forEach(k=>{const X=garante(k);X.fixos=X.fixos.filter(f=>f.id!==id);delete X.pagos[id];saveMes(k)});
  S.cfg.fixos=JSON.parse(JSON.stringify(garante(m).fixos));saveCfg();closeSheet();render()}
-function togglePago(id){const m=ym(cur),M=garante(m);if(M.pagos[id])delete M.pagos[id];else{M.pagos[id]=m===ym(new Date())?today():dt(m,(M.fixos.find(f=>f.id===id)||{}).dia||1);falaExtra='Conta paga. Menos uma.'}saveMes(m);render()}
+function togglePago(id){const m=ym(cur),M=garante(m);if(M.pagos[id])delete M.pagos[id];else{const f=M.fixos.find(f=>f.id===id)||{};M.pagos[id]=m===ym(new Date())?today():dt(m,f.dia||1);falaExtra='Conta paga. Menos uma.';aviso([{type:'pago',nome:f.nome,valor:f.valor}])}saveMes(m);render()}
 function salvaCaixinha(){
  const nome=document.getElementById('cn').value.trim();if(!nome)return document.getElementById('cn').focus();
  const c={id:F.id||uid(),nome,emoji:F.emoji,meta:gs(document.getElementById('cm').value)};

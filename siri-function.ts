@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
   if (!texto || !String(texto).trim()) return resp('Não ouvi nada. Tenta de novo?', 400);
 
   const sb = createClient(SB_URL, ANON, { auth: { persistSession: false } });
-  const { error: eLogin } = await sb.auth.signInWithPassword({ email: String(email).trim().toLowerCase(), password: String(senha) });
+  const { data: sess, error: eLogin } = await sb.auth.signInWithPassword({ email: String(email).trim().toLowerCase(), password: String(senha) });
   if (eLogin) return resp('E-mail ou senha do atalho estão errados.', 401);
 
   const { data: cfgRow } = await sb.from('cofrin').select('data').eq('id', 'config/geral').maybeSingle();
@@ -146,6 +146,14 @@ Deno.serve(async (req) => {
   const resta = (MA?.limite ?? cfg.limite) - gastos;
   const itens = its.map((o) => (o.tipo === 'gasto' ? (o.desc || o.cat) : o.tipo === 'receita' ? 'receita' : 'caixinha') + ' ' + (o.brl ? o.valor.toLocaleString('pt-BR') + ' reais' : fala(o.valor)) + (o.par > 1 ? ` em ${o.par} vezes` : '')).join(', ');
   const delivery = its.some((o) => o.cat === 'Delivery');
+  // avisa os celulares cadastrados
+  try {
+    const em = String(email).trim().toLowerCase(), quem = em.charAt(0).toUpperCase() + em.split('@')[0].slice(1);
+    const CATE = { Mercado: '🛒', Comida: '🍔', Delivery: '🛵', Transporte: '🚗', Casa: '🏠', 'Bebê': '🍼', 'Saúde': '💊', Lazer: '🎮', Compras: '🛍️', Contas: '🧾', Pets: '🐾', Outros: '✨' };
+    const linhas = its.map((o) => o.tipo === 'gasto' ? `${CATE[o.cat] || '✨'} ${o.desc || o.cat} · ${fmt(o.valor)}${o.par > 1 ? ' em ' + o.par + 'x' : ''}` : o.tipo === 'receita' ? `💰 ${o.brl ? 'R$ ' + o.valor.toLocaleString('pt-BR') : fmt(o.valor)}` : `🐷 Guardou ${fmt(o.valor)}`);
+    const title = its.length > 1 ? `${quem} lançou ${its.length} itens (Siri)` : its[0].tipo === 'gasto' ? `${quem} lançou um gasto (Siri)` : its[0].tipo === 'receita' ? `${quem} lançou uma receita (Siri)` : `${quem} guardou dinheiro (Siri)`;
+    await fetch(SB_URL + '/functions/v1/push', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + sess.session.access_token }, body: JSON.stringify({ acao: 'avisar', title, body: linhas.join('\n') + `\nRestam ${fmt(Math.max(0, resta))} no mês.`, url: './#inicio' }) });
+  } catch (_) { /* aviso é opcional */ }
   const fim = resta < 0 ? `Vocês estouraram o limite em ${fala(-resta)}. Eu avisei.` : `Restam ${fala(resta)} no mês.` + (delivery ? ' E delivery de novo, hein?' : '');
   return resp(`Anotado! ${itens}. ${fim}`);
 });
