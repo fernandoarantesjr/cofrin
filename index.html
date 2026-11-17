@@ -6,6 +6,14 @@
 <meta name="theme-color" content="#ffffff">
 <title>Cofrin — seu cofrinho que te julga</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cofrin">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -140,6 +148,17 @@ input,select{font:inherit;color:inherit}
 .cta.alt{background:var(--soft);color:var(--ink);margin-top:8px}
 .cta.del{background:none;color:var(--bad);margin-top:6px}
 .conv{font-size:13px;color:var(--mute);margin:-4px 0 12px}.conv b{color:var(--ink)}
+/* voz */
+.voz{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.voz .field{margin:0;flex:1}
+.mic{width:50px;height:50px;border-radius:50%;background:var(--acc);color:#fff;flex:none;display:grid;place-items:center;box-shadow:0 4px 12px rgba(255,106,19,.35)}
+.mic svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.mic.on{background:var(--bad);animation:pulse 1.1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(229,56,59,.45)}100%{box-shadow:0 0 0 16px rgba(229,56,59,0)}}
+.vozh{font-size:12px;color:var(--mute);margin:-4px 0 12px}
+.vres{background:var(--soft);border-radius:16px;padding:6px 12px;margin-bottom:12px}
+.vres .tx .x{color:#aaa;font-size:16px;padding:6px}
+.ou{display:flex;align-items:center;gap:10px;color:var(--mute);font-size:12px;margin:4px 0 12px}.ou:before,.ou:after{content:"";flex:1;height:1px;background:var(--line)}
 /* onboarding/login */
 .onb{position:fixed;inset:0;background:#fff;z-index:9;display:flex;justify-content:center}
 .onb .in{max-width:420px;width:100%;padding:60px 22px 30px;display:flex;flex-direction:column;text-align:center}
@@ -331,7 +350,7 @@ setTimeout(()=>{
  if(!sb){document.getElementById('login').style.display='flex';document.getElementById('lmsg').textContent='Falta conectar o Supabase.';return}
  sb.auth.onAuthStateChange((_e,session)=>{const ok=!!session;
   document.getElementById('login').style.display=ok?'none':'flex';
-  if(ok&&!logado){logado=true;carregar();if(!onb)document.getElementById('onb').style.display='flex'}})},0);
+  if(ok&&!logado){logado=true;carregar();if(!onb)document.getElementById('onb').style.display='flex';else if(atalho)setTimeout(()=>openLancar(null,null,atalho==='falar'?{ouvir:true}:null),300)}})},0);
 const saveMes=m=>nuvem('meses/'+m,S.meses[m]);
 const saveCfg=()=>nuvem('config/geral',S.cfg);
 
@@ -604,17 +623,17 @@ function openLancar(m,id,preset){
   if(t.brl){L.moeda='BRL';L.valorBRL=t.brl;L.cot=t.cot}else if(t.type==='receita')L.moeda='PYG'}
  Object.assign(L,preset||{});
  if(L.tipo==='receita'&&L.renda&&!L.desc){const r=S.cfg.rendas.find(r=>r.id===L.renda);if(r)L.desc='Salário '+r.nome}
- drawLancar();abrir();
- setTimeout(()=>{const v=document.getElementById('fv');if(v&&!id)v.focus()},320);
+ VZ=[];drawLancar();abrir();
+ if(preset&&preset.ouvir)setTimeout(ouvir,350);
 }
 function drawLancar(){
  const B=document.getElementById('sheetBody'),ed=!!L.edit;
  const seg=ed?'':`<div class="seg">${[['gasto','Gasto'],['receita','Receita'],['caixinha','Caixinha']].map(([k,n])=>`<button class="${L.tipo===k?'on':''}" onclick="L.tipo='${k}';drawLancar()">${n}</button>`).join('')}</div>`;
  const dataUI=`<div class="pill">${[['Hoje',today()],['Ontem',addDays(today(),-1)]].map(([n,d])=>`<button class="${L.date===d?'on':''}" onclick="L.date='${d}';drawLancar()">${n}</button>`).join('')}<input type="date" class="field" style="margin:0;padding:6px 10px;width:auto;flex:1" value="${L.date}" onchange="L.date=this.value||L.date;drawLancar()"></div>`;
- let h='';
+ let h=ed?'':vozUI();
  if(L.tipo==='gasto'){
   const rc=ed?[]:recentes();
-  h=`<h2>${ed?'Editar gasto':'Novo gasto'}</h2>${seg}
+  h=`<h2>${ed?'Editar gasto':'Novo gasto'}</h2>`+h+`${seg}
    ${rc.length?`<p class="lbl">Repetir um recente</p><div class="pill scroll">${rc.map((t,i)=>`<button onclick="usaRecente(${i})">${catE(t.cat)} ${esc(t.desc||t.cat)} · ${fmtK(t.valor)}</button>`).join('')}</div>`:''}
    <div class="money"><span>₲</span><input id="fv" inputmode="numeric" placeholder="0" autocomplete="off" value="${L.valor?L.valor.toLocaleString('pt-BR'):''}" oninput="mascara(this);L.valor=gs(this.value);upCta()"></div>
    <div class="pill">${[10000,20000,50000,100000].map(v=>`<button onclick="somaV(${v})">+${fmtK(v)}</button>`).join('')}<button onclick="L.valor=0;drawLancar()">limpar</button></div>
@@ -624,7 +643,7 @@ function drawLancar(){
    ${ed?'':`<div class="step"><button onclick="L.par=Math.max(1,L.par-1);drawLancar()">−</button><span>${L.par===1?'À vista':`Parcelado em <b>${L.par}x</b>${L.valor?' de '+fmt(L.valor/L.par):''}`}</span><button onclick="L.par=Math.min(48,L.par+1);drawLancar()">＋</button></div>`}`;
  }else if(L.tipo==='receita'){
   const brl=L.moeda==='BRL';
-  h=`<h2>${ed?'Editar receita':'Nova receita'}</h2>${seg}
+  h=`<h2>${ed?'Editar receita':'Nova receita'}</h2>`+h+`${seg}
    <p class="lbl">De quem</p><div class="pill">${S.cfg.rendas.map(r=>`<button class="${r.id===L.renda?'on':''}" onclick="L.renda='${r.id}';L.desc='Salário ${esc(r.nome)}';drawLancar()">${esc(r.nome)}</button>`).join('')}<button class="${L.renda?'':'on'}" onclick="L.renda=null;L.desc='';drawLancar()">Outra</button></div>
    <div class="seg" style="margin-bottom:10px"><button class="${brl?'on':''}" onclick="L.moeda='BRL';drawLancar()">Recebi em R$</button><button class="${brl?'':'on'}" onclick="L.moeda='PYG';drawLancar()">Recebi em ₲</button></div>
    <div class="money"><span>${brl?'R$':'₲'}</span><input id="fv" inputmode="${brl?'decimal':'numeric'}" placeholder="${brl?'0,00':'0'}" autocomplete="off" value="${brl?(L.valorBRL?L.valorBRL.toLocaleString('pt-BR',{minimumFractionDigits:2}):''):(L.valor?L.valor.toLocaleString('pt-BR'):'')}" oninput="${brl?'L.valorBRL=rs(this.value)':'mascara(this);L.valor=gs(this.value)'};upConv()"></div>
@@ -632,7 +651,7 @@ function drawLancar(){
    <input class="field" placeholder="Descrição" value="${esc(L.desc)}" oninput="L.desc=this.value">${dataUI}`;
  }else{
   const cs=S.cfg.caixinhas;
-  h=`<h2>${ed?'Editar movimento':'Caixinha'}</h2>${seg}
+  h=`<h2>${ed?'Editar movimento':'Caixinha'}</h2>`+h+`${seg}
    ${cs.length?`<div class="seg" style="margin-bottom:10px"><button class="${L.cxModo==='guardar'?'on':''}" onclick="L.cxModo='guardar';drawLancar()">Guardar</button><button class="${L.cxModo==='resgatar'?'on':''}" onclick="L.cxModo='resgatar';drawLancar()">Resgatar</button></div>
    <div class="pill">${cs.map(c=>`<button class="${c.id===L.cx?'on':''}" onclick="L.cx='${c.id}';drawLancar()">${c.emoji||'🐷'} ${esc(c.nome)} · ${fmtK(cxSaldo(c.id))}</button>`).join('')}</div>
    <div class="money"><span>₲</span><input id="fv" inputmode="numeric" placeholder="0" autocomplete="off" value="${L.valor?L.valor.toLocaleString('pt-BR'):''}" oninput="mascara(this);L.valor=gs(this.value);upCta()"></div>
@@ -664,11 +683,7 @@ function salvaLancar(){
   if(L.cxModo==='resgatar'&&L.valor>cxSaldo(L.cx)+(L.edit?L.valor:0)){falaExtra='Não dá pra resgatar mais do que tem na caixinha.';faceExtra='julga';closeSheet();render();return}
   Object.assign(t,{type:L.cxModo,cx:L.cx,valor:L.valor})}
  if(L.edit){const old=mes(L.edit.m).tx.find(x=>x.id===L.edit.id);if(old&&old.grupo){t.grupo=old.grupo;t.par=old.par;t.desc=t.desc||old.desc}tiraTx(L.edit.m,L.edit.id)}
- const lista=[];
- if(t.type==='gasto'&&!L.edit&&L.par>1){const g=uid(),base=Math.floor(t.valor/L.par),dia=+t.date.slice(8);
-  for(let i=0;i<L.par;i++){const m=addM(t.date.slice(0,7),i);lista.push({...t,id:uid(),grupo:g,par:`${i+1}/${L.par}`,valor:i===L.par-1?t.valor-base*(L.par-1):base,date:dt(m,dia)})}}
- else lista.push(t);
- const ms=new Set();lista.forEach(x=>{const m=x.date.slice(0,7);garante(m).tx.push(x);ms.add(m)});ms.forEach(saveMes);
+ gravaTx(t,L.edit?1:L.par);
  closeSheet();
  if(!L.edit){
   if(t.type==='gasto'){const lim=mes(t.date.slice(0,7)).limite;if(t.valor>=lim*.25){falaExtra=pick(FALAS.grande);faceExtra='choque'}else if(t.cat==='Delivery'){falaExtra=pick(FALAS.delivery);faceExtra='julga'}}
@@ -677,6 +692,141 @@ function salvaLancar(){
   if(view!=='caixinhas'){view='inicio';cur=new Date(t.date.slice(0,7)+'-15');cur.setDate(1)}
  }
  render();if(!L.edit&&view==='inicio')(sinal(t)>0||t.type==='guardar'?coinIn:coinOut)();
+}
+function gravaTx(t,par){
+ const lista=[];
+ if(t.type==='gasto'&&par>1){const g=uid(),base=Math.floor(t.valor/par),dia=+t.date.slice(8);
+  for(let i=0;i<par;i++){const m=addM(t.date.slice(0,7),i);lista.push({...t,id:uid(),grupo:g,par:`${i+1}/${par}`,valor:i===par-1?t.valor-base*(par-1):base,date:dt(m,dia)})}}
+ else lista.push(t);
+ const ms=new Set();lista.forEach(x=>{const m=x.date.slice(0,7);garante(m).tx.push(x);ms.add(m)});ms.forEach(saveMes);
+}
+
+/* ---------- lançar falando ---------- */
+/* ---------- entende frases: "gastei 85 mil no ifood e 30 mil de uber ontem" ---------- */
+const semAcento=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const NUMS={zero:0,um:1,uma:1,dois:2,duas:2,tres:3,quatro:4,cinco:5,seis:6,sete:7,oito:8,nove:9,dez:10,onze:11,doze:12,treze:13,quatorze:14,catorze:14,quinze:15,dezesseis:16,dezessete:17,dezoito:18,dezenove:19,vinte:20,trinta:30,quarenta:40,cinquenta:50,sessenta:60,setenta:70,oitenta:80,noventa:90,cem:100,cento:100,duzentos:200,trezentos:300,quatrocentos:400,quinhentos:500,seiscentos:600,setecentos:700,oitocentos:800,novecentos:900,meio:.5,meia:.5};
+// "cento e vinte mil" -> "120 mil" ; "um milhao e meio" -> "1.5 milhao"
+function palavrasParaNumeros(s){
+ s=s.replace(/\b(um|uma)\s+(milhao|milhoes|mil)\b/g,'1 $2');
+ return s.replace(/\b((?:(?:zero|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|quatorze|catorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzentos|trezentos|quatrocentos|quinhentos|seiscentos|setecentos|oitocentos|novecentos)(?:\s+e\s+|\s+)?)+)/g,m=>{
+  const n=m.trim().split(/\s+e\s+|\s+/).reduce((a,w)=>a+(NUMS[w]||0),0);return n+' '});
+}
+// lê o valor de um pedaço: "85 mil", "85.000", "1,5 milhao", "1 milhao e 200 mil", "50 reais"
+function lerValor(p){
+ let total=0,achou=false,brl=false;
+ const re=/(\d+(?:[.,]\d+)*)\s*(milhoes|milhao|mi\b|mil\b|k\b)?(?:\s+e\s+meio)?/g;let m;
+ while((m=re.exec(p))){
+  let raw=m[1];
+  if(/^\d{1,3}(\.\d{3})+$/.test(raw))raw=raw.replace(/\./g,'');      // 85.000
+  else raw=raw.replace(/\./g,'').replace(',','.');                     // 1,5
+  let v=parseFloat(raw);if(isNaN(v))continue;
+  const u=m[2]||'';if(/milh|^mi$/.test(u))v*=1e6;else if(u==='mil'||u==='k')v*=1e3;
+  if(/e\s+meio/.test(m[0]))v+=(/milh|^mi$/.test(u)?5e5:500);
+  // "em 3 vezes"/"3x" não é valor
+  const depois=p.slice(m.index+m[0].length,m.index+m[0].length+9);
+  if(v<=48&&!u&&/^\s*(x\b|vezes\b|parcelas\b)/.test(depois))continue;
+  total+=v;achou=true;
+ }
+ if(/\breais\b|\bem real\b|r\$/.test(p))brl=true;
+ return achou?{v:total,brl}:null;
+}
+const KW={
+ Delivery:['ifood','delivery','pedidosya','pedidos ya','monchis','rappi','entrega','tele entrega'],
+ Mercado:['supermercado','mercado','superseis','super seis','stock','biggie','real supermercado','feira','acougue','hortifruti','atacado','despensa'],
+ Comida:['almoco','jantar','janta','lanche','restaurante','cafe','pizza','hamburguer','burger','sorvete','padaria','empanada','chipa','pao','comida','mcdonald','bk','burger king','sushi','churrasco'],
+ Transporte:['uber','bolt','gasolina','combustivel','nafta','posto','onibus','taxi','estacionamento','muv','pedagio','mecanico','oficina'],
+ Casa:['aluguel','luz','ande','agua','essap','gas','moveis','casa','limpeza','faxina','condominio'],
+ 'Bebê':['fralda','fraldas','leite','bebe','pediatra','mamadeira','lenco umedecido','creche','brinquedo'],
+ 'Saúde':['farmacia','remedio','medico','consulta','dentista','exame','hospital','academia','vacina'],
+ Lazer:['cinema','bar','cerveja','jogo','game','netflix','spotify','show','balada','passeio','viagem','festa','xbox','steam'],
+ Compras:['shopping','roupa','loja','presente','sapato','tenis','amazon','shein','mercado livre','camiseta','eletronico','celular novo'],
+ Contas:['internet','tigo','personal','claro','conta de','fatura','assinatura','plano','seguro','imposto'],
+ Pets:['racao','veterinario','pet','cachorro','gato']
+};
+const MARCAS={ifood:'iFood',pedidosya:'PedidosYa',monchis:'Monchis',superseis:'Superseis','super seis':'Superseis',stock:'Stock',biggie:'Biggie',uber:'Uber',bolt:'Bolt',muv:'MUV',netflix:'Netflix',spotify:'Spotify',amazon:'Amazon',shein:'Shein',tigo:'Tigo',ande:'ANDE',essap:'ESSAP',mcdonald:"McDonald's",'burger king':'Burger King',shopping:'Shopping',rappi:'Rappi'};
+const STOP=new Set('eu gastei gastamos paguei pagamos comprei compramos foi deu de do da dos das no na nos nas em com pra para por o a os as um uma uns umas hoje ontem anteontem guarani guaranis gs mil milhao milhoes reais real e que ai la aqui mais tambem so agora reais valor tipo ja meio parcelado vezes'.split(' '));
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+function interpretar(frase){
+ const original=frase.trim();if(!original)return[];
+ let s=' '+semAcento(original).replace(/[!?;]/g,' ').replace(/,\s/g,' , ')+' ';
+ s=palavrasParaNumeros(s).replace(/\s+/g,' ');
+ // "1 milhao e 200 mil" vira um número só
+ s=s.replace(/(\d+(?:[.,]\d+)?)\s*milh(?:ao|oes)\s+e\s+(\d+)\s*mil\b/g,(_,a,b)=>String(Math.round(parseFloat(a.replace(',','.'))*1e6+(+b)*1e3)));
+ const acentos={};original.split(/\s+/).forEach(w=>{const c=w.replace(/[^\p{L}\p{N}]/gu,'');if(c)acentos[semAcento(c)]=c.toLowerCase()});
+ // data
+ let dataOff=0;if(/\banteontem\b/.test(s))dataOff=-2;else if(/\bontem\b/.test(s))dataOff=-1;
+ // tipo da frase toda
+ const tipoGeral=/\b(recebi|recebemos|caiu|entrou|salario|pagamento da empresa|ganhei)\b/.test(s)?'receita':/\b(guardei|guardamos|guarda|guardar|poupei|separei)\b/.test(s)?'guardar':'gasto';
+ // separa vários itens: "85 mil no ifood e 30 mil de uber"
+ const partes=s.split(/\s(?:e|mais|,)\s(?=(?:(?!\be\b).)*?\d)/).filter(p=>/\d/.test(p));
+ const out=[];
+ (partes.length?partes:[s]).forEach(p=>{
+  const val=lerValor(p);if(!val||!val.v)return;
+  let par=1;const mp=p.match(/(?:em\s+)?(\d{1,2})\s*(?:x\b|vezes|parcelas)/);if(mp)par=Math.min(48,+mp[1]);
+  let cat=null,marca=null;
+  for(const [c,ws] of Object.entries(KW)){for(const w of ws){if(new RegExp('\\b'+w+'\\b').test(p)){cat=c;if(MARCAS[w])marca=MARCAS[w];break}}if(cat)break}
+  // descrição: palavras que sobraram
+  const resto=p.replace(/\d+(?:[.,]\d+)*/g,' ').replace(/\b(x|vezes|parcelas|parcelado|milhoes|milhao|mi|mil|k)\b/g,' ').split(/\s+/).filter(w=>w&&!STOP.has(w)&&!/^(recebi|recebemos|caiu|entrou|guardei|guardamos|guarda|guardar|poupei|separei|na caixinha|caixinha)$/.test(w));
+  let desc=marca||(resto.length?cap(resto.slice(0,4).map(w=>acentos[w]||w).join(' ')):'');
+  out.push({tipo:tipoGeral,valor:Math.round(val.v),brl:val.brl,cat:cat||(tipoGeral==='gasto'?'Outros':null),desc,par,dataOff});
+ });
+ return out;
+}
+
+
+let VZ=[],rec=null;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function vozUI(){
+ return `<div class="voz"><button class="mic" id="micBtn" onclick="ouvir()" aria-label="Falar"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+  <input class="field" id="vozIn" placeholder="Fale ou escreva: 85 mil no iFood" enterkeyhint="done" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();processaVoz(this.value)}"><button class="mini" onclick="processaVoz(document.getElementById('vozIn').value)">OK</button></div>
+  <p class="vozh" id="vozH">${SR?'Toque no microfone e fale. Dá pra falar vários: "mercado 230 mil e uber 30 mil".':'Use o microfone do teclado do celular pra ditar a frase.'}</p>
+  <div id="vozRes">${vozLista()}</div><div class="ou">ou preencha</div>`;
+}
+function ouvir(){
+ const h=document.getElementById('vozH'),b=document.getElementById('micBtn'),inp=document.getElementById('vozIn');
+ if(!SR){inp.focus();h.textContent='Seu navegador não libera o microfone aqui. Toque no campo e use o 🎙️ do teclado.';return}
+ if(rec){rec.stop();return}
+ rec=new SR();rec.lang='pt-BR';rec.interimResults=true;rec.maxAlternatives=1;
+ let final='';
+ rec.onresult=e=>{let t='';for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript;else t+=e.results[i][0].transcript}inp.value=final+t};
+ rec.onerror=e=>{h.textContent=e.error==='not-allowed'||e.error==='service-not-allowed'?'Microfone bloqueado. Libere nas permissões ou use o 🎙️ do teclado.':e.error==='no-speech'?'Não ouvi nada. Tenta de novo?':'Não deu pra ouvir agora. Escreva a frase ou use o 🎙️ do teclado.'};
+ rec.onend=()=>{rec=null;b.classList.remove('on');if(inp.value.trim())processaVoz(inp.value)};
+ try{rec.start();b.classList.add('on');h.textContent='Ouvindo… fale o gasto. Toque de novo pra parar.';setMood(document.getElementById('mascot'),'ok')}catch(e){rec=null;h.textContent='Não deu pra abrir o microfone. Use o 🎙️ do teclado.'}
+}
+function processaVoz(txt){
+ const its=interpretar(txt||'');
+ if(!its.length){document.getElementById('vozH').textContent='Não achei o valor. Tente: "gastei 85 mil no mercado".';return}
+ VZ=its.map(o=>{const date=addDays(today(),o.dataOff||0);
+  if(o.tipo==='receita'){const r=S.cfg.rendas.find(r=>semAcento(txt).includes(semAcento(r.nome)));
+   return o.brl?{type:'receita',brl:o.valor,cot:S.cfg.cot,valor:Math.round(o.valor*(S.cfg.cot||0)),renda:r&&r.id,desc:r?'Salário '+r.nome:o.desc,date,falta:!S.cfg.cot}:{type:'receita',valor:o.valor,renda:r&&r.id,desc:r?'Salário '+r.nome:o.desc,date}}
+  if(o.tipo==='guardar'){const cx=S.cfg.caixinhas.find(c=>semAcento(txt).includes(semAcento(c.nome).split(' ')[0]))||S.cfg.caixinhas[0];
+   return{type:'guardar',cx:cx&&cx.id,valor:o.valor,date,falta:!cx}}
+  return{type:'gasto',valor:o.valor,cat:o.cat,desc:o.desc,date,par:o.par}});
+ document.getElementById('vozRes').innerHTML=vozLista();
+ document.getElementById('vozH').textContent='Confere e toque em anotar. Pra mudar algo, toque no item.';
+ const b=document.getElementById('vozOk');if(b)b.focus();
+}
+function vozLista(){
+ if(!VZ.length)return '';
+ return `<div class="vres">${VZ.map((t,i)=>{const cx=t.cx&&S.cfg.caixinhas.find(c=>c.id===t.cx);
+  const e=t.type==='receita'?'💰':t.type==='guardar'?'🐷':catE(t.cat);
+  const nome=t.type==='guardar'?'Guardar em '+(cx?cx.nome:'(crie uma caixinha)'):(t.desc||t.cat||'Receita');
+  const info=(t.type==='gasto'?t.cat:t.brl?fmtR(t.brl)+(t.falta?' · falta a cotação':' × '+t.cot.toLocaleString('pt-BR')):'')+' · '+(t.date===today()?'hoje':dd(t.date))+(t.par>1?' · '+t.par+'x':'');
+  return `<div class="tx"><button class="e" onclick="vozAjusta(${i})">${e}</button><button class="d" style="text-align:left" onclick="vozAjusta(${i})"><p>${esc(nome)}</p><small>${esc(info)}</small></button><div class="v ${t.type!=='gasto'?'pos':''}">${t.falta&&t.type==='receita'?'R$ '+t.brl:fmt(t.valor)}</div><button class="x" onclick="VZ.splice(${i},1);document.getElementById('vozRes').innerHTML=vozLista()" aria-label="Tirar">✕</button></div>`}).join('')}</div>
+  <button class="cta" id="vozOk" onclick="vozSalva()" style="margin-bottom:6px">Anotar${VZ.length>1?" os "+VZ.length:""} · ${fmt(VZ.reduce((a,t)=>a+(t.valor||0),0))}</button>`;
+}
+function vozAjusta(i){const t=VZ.splice(i,1)[0];
+ Object.assign(L,{tipo:t.type==='guardar'?'caixinha':t.type,valor:t.valor,cat:t.cat||L.cat,desc:t.desc||'',date:t.date,par:t.par||1,renda:t.renda||null,cx:t.cx||L.cx,cxModo:'guardar'});
+ if(t.brl){L.moeda='BRL';L.valorBRL=t.brl;L.cot=t.cot||L.cot}else if(t.type==='receita')L.moeda='PYG';
+ drawLancar()}
+function vozSalva(){
+ const pend=VZ.find(t=>t.falta);if(pend)return vozAjusta(VZ.indexOf(pend));
+ const ult=VZ[VZ.length-1];
+ VZ.forEach(t=>{const {par,falta,...x}=t;x.id=uid();if(x.type==='receita'&&!x.renda)delete x.renda;gravaTx(x,par||1)});
+ const n=VZ.length;VZ=[];closeSheet();
+ if(ult.type==='gasto'&&ult.cat==='Delivery'){falaExtra=pick(FALAS.delivery);faceExtra='julga'}
+ else{falaExtra=n>1?`Anotei ${n} lançamentos. De nada.`:ult.type==='gasto'?'Anotado. Tô de olho.':pick(FALAS[ult.type==='receita'?'receita':'guardar']);faceExtra=ult.type==='gasto'?'ok':'feliz'}
+ view='inicio';cur=new Date(ult.date.slice(0,7)+'-15');cur.setDate(1);render();(ult.type==='gasto'?coinOut:coinIn)();
 }
 function apagaTx(todas){
  const {m,id,grupo}=L.edit;
@@ -726,7 +876,7 @@ function openSheet(kind,id){
  abrir();
 }
 function abrir(){document.getElementById('veil').classList.add('on');document.getElementById('sheet').classList.add('on')}
-function closeSheet(){document.getElementById('veil').classList.remove('on');document.getElementById('sheet').classList.remove('on')}
+function closeSheet(){if(rec)try{rec.abort()}catch(e){}document.getElementById('veil').classList.remove('on');document.getElementById('sheet').classList.remove('on')}
 function salvaFixo(){
  const nome=document.getElementById('fn').value.trim(),valor=gs(document.getElementById('fx').value),dia=Math.min(31,Math.max(1,F.dia||1));
  if(!nome)return document.getElementById('fn').focus();if(!valor)return document.getElementById('fx').focus();
@@ -772,8 +922,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 pigInit(document.getElementById('mascot'),'feliz');pigInit(document.getElementById('onbMascot'),'feliz');
 pigInit(document.getElementById('loginMascot'),'julga');
 const h0=location.hash.slice(1);if(['inicio','painel','caixinhas','contas'].includes(h0))view=h0;
+const atalho=h0==='falar'||h0==='lancar'?h0:null;
 if(!onb&&!true)document.getElementById('onb').style.display='flex';
 render();
+if(atalho&&!true)setTimeout(()=>openLancar(null,null,atalho==='falar'?{ouvir:true}:null),400);
 </script>
 </body>
 </html>
