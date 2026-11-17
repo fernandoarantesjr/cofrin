@@ -14,7 +14,7 @@ Login restrito: só entram os e-mails que você criar.
 ### 1. Criar o cofre (Supabase)
 1. Entre em https://supabase.com e crie um projeto (plano Free).
 2. Menu **SQL Editor** → *New query* → cole o conteúdo de `supabase.sql` → **Run**.
-   - Se for usar outros e-mails, troque `fernando@cofrin.app` e `cliente@cofrin.app` no arquivo antes de rodar.
+   - Se for usar outros e-mails, troque os e-mails no arquivo antes de rodar.
 
 ### 2. Fechar o cadastro
 1. **Authentication → Sign In / Providers** (ou *Settings*).
@@ -24,7 +24,7 @@ Login restrito: só entram os e-mails que você criar.
 ### 3. Criar os 2 logins
 1. **Authentication → Users → Add user → Create new user**.
 2. E-mail: `fernando@cofrin.app`, escolha uma senha forte, marque **Auto Confirm User**.
-3. Repita para `cliente@cofrin.app`.
+3. Repita para `luiz@cofre.app`.
 
 > Os e-mails são fictícios: com *Auto Confirm* nenhum e-mail é enviado.
 

@@ -14,8 +14,8 @@ alter table public.cofrin enable row level security;
 create or replace function public.cofrin_liberado() returns boolean
 language sql stable as $$
   select coalesce(auth.jwt() ->> 'email', '') in (
-    'fernando@cofrin.app',
-    'cliente@cofrin.app'
+    'fernando@cofrin.app', 'fernando@cofre.app',
+    'luiz@cofre.app',      'luiz@cofrin.app'
   );
 $$;
 
