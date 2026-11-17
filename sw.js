@@ -1,6 +1,6 @@
 // Cofrin: permite instalar como app e receber notificações.
 // Sempre busca a versão nova na internet; sem internet, usa a última salva.
-const C = 'cofrin-v10';
+const C = 'cofrin-v11';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', (e) => {

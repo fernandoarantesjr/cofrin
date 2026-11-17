@@ -1095,6 +1095,7 @@ function openSheet(kind,id){
   B.innerHTML=`<h2>Ajustes</h2>
    <p class="lbl">Aparência</p>
    <div class="seg" style="margin-bottom:16px">${[['auto','circle-half','Dia/noite'],['sistema','device-mobile','iPhone'],['claro','sun','Claro'],['escuro','moon','Escuro']].map(([k,i,n])=>`<button class="${tp===k?'on':''}" style="font-size:12px;padding:9px 2px" onclick="try{localStorage.setItem('cofrin.tema','${k}')}catch(e){};aplicaTema();[...this.parentNode.children].forEach(x=>x.classList.remove('on'));this.classList.add('on')">${ic(i,'d')} ${n}</button>`).join('')}</div>
+   <button class="row" style="width:100%;align-items:center;margin:-6px 0 14px;padding:10px 0" onclick="try{localStorage.setItem('cofrin.giro',giroLigado()?'off':'on')}catch(e){};openSheet('ajustes')"><span style="text-align:left">Olhos seguem a inclinação<small style="display:block;color:var(--mute);font-size:12px">Ativa ao tocar no porquinho</small></span><span class="chk ${giroLigado()?'on':''}" style="pointer-events:none">${ic('check')}</span></button>
    <p class="lbl">Limite de gastos do mês (fora as contas fixas) · vale de ${mesNome(m)} em diante</p>
    <div class="money"><span>₲</span><input id="fl" inputmode="numeric" value="${mes(m).limite.toLocaleString('pt-BR')}" oninput="mascara(this)"></div>
    <p class="lbl">Quanto vocês tinham em guaraní quando começaram a usar o app</p>
@@ -1165,7 +1166,7 @@ function limitesMes(){const atual=ym(new Date());
  let ini=S.cfg.inicio||usados[0]||atual;if(ini>atual)ini=atual;return{ini,fim:atual}}
 function prendeMes(){const {ini,fim}=limitesMes(),m=ym(cur);if(m<ini||m>fim){cur=new Date((m<ini?ini:fim)+'-15');cur.setDate(1)}}
 function shiftMonth(n){const {ini,fim}=limitesMes(),alvo=addM(ym(cur),n);if(alvo<ini||alvo>fim)return;cur=new Date(alvo+'-15');cur.setDate(1);render()}
-function cutuca(){document.getElementById('bubble').textContent=pick(CUTUCA);act('sq')}
+function cutuca(){document.getElementById('bubble').textContent=pick(CUTUCA);act('sq');window.pedeGiro&&pedeGiro()}
 function finishOnb(){try{localStorage.setItem('cofrin.onb','1')}catch(e){}document.getElementById('onb').style.display='none';openSheet('ajustes')}
 
 /* ---------- retrospectiva do mês (estilo stories) ---------- */
@@ -1245,14 +1246,13 @@ pigInit(document.getElementById('mascot'),'feliz');
   if(!ativo){ativo=true;document.documentElement.classList.add('giro');if(!loop){loop=true;requestAnimationFrame(tick)}}
   if(b0===null)b0=e.beta;b0+=(e.beta-b0)*.004;          // "posição neutra" se adapta devagar ao jeito que você segura
   tx=Math.max(-1,Math.min(1,e.gamma/22));ty=Math.max(-1,Math.min(1,(e.beta-b0)/18))};
- const liga=()=>addEventListener('deviceorientation',onOri);
- const D=window.DeviceOrientationEvent;if(!D)return;
- if(typeof D.requestPermission==='function'){
-  let pediu=null;try{pediu=localStorage.getItem('cofrin.giro')}catch(e){}
-  if(pediu==='sim')D.requestPermission().then(r=>r==='granted'&&liga()).catch(()=>{});
-  const pede=()=>{removeEventListener('touchend',pede);D.requestPermission().then(r=>{try{localStorage.setItem('cofrin.giro',r==='granted'?'sim':'nao')}catch(e){};if(r==='granted')liga()}).catch(()=>{})};
-  if(pediu!=='nao')addEventListener('touchend',pede);
- }else liga();
+ let ligado=false;const liga=()=>{if(!ligado){ligado=true;addEventListener('deviceorientation',onOri)}};
+ const D=window.DeviceOrientationEvent;
+ // o iPhone não guarda essa permissão quando o app reabre: só pede quando a pessoa toca no porquinho
+ window.giroLigado=()=>{try{return localStorage.getItem('cofrin.giro')!=='off'}catch(e){return true}};
+ window.pedeGiro=()=>{if(!D||ligado||!giroLigado())return;
+  if(typeof D.requestPermission==='function')D.requestPermission().then(r=>{if(r==='granted')liga()}).catch(()=>{});else liga()};
+ if(D&&typeof D.requestPermission!=='function'&&giroLigado())liga();   // Android e outros: não precisa pedir
  document.addEventListener('pointermove',e=>{if(ativo&&e.pointerType==='touch')e.stopImmediatePropagation()},true);
 })();pigInit(document.getElementById('onbMascot'),'feliz');
 pigInit(document.getElementById('loginMascot'),'julga');
