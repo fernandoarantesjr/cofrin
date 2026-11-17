@@ -319,7 +319,7 @@ html[data-tema=escuro] .cats button.on .ct{background:rgba(0,0,0,.08);color:#111
     <div class="card"><h3>Para onde foi o dinheiro <span id="catTot"></span></h3><div id="cats"></div></div>
     <div class="card"><h3>Ritmo do mês</h3><div class="legend"><span><i style="background:var(--acc)"></i>Gasto acumulado</span><span><i style="background:#b9b4ae"></i>Ritmo ideal</span></div><div id="ritmo"></div></div>
     <div class="card"><h3>Últimos 6 meses</h3><div class="legend"><span><i class="sq" style="background:var(--in)"></i>Entradas</span><span><i class="sq" style="background:var(--acc)"></i>Saídas</span></div><div id="seis"></div></div>
-    <div class="card"><h3>Próximos 30 dias <span id="futSaldo"></span></h3><div id="futuro"></div></div>
+    <div class="card"><h3>Até o fim do mês <span id="futSaldo"></span></h3><div id="futuro"></div><div id="proxMes"></div></div>
   </section>
 
   <!-- CAIXINHAS -->
@@ -388,14 +388,16 @@ function aplicaNuvem(rows){ // rows: [{id,data}]
 const SUPABASE_URL='https://thsdxhvikpuhfzcohano.supabase.co';
 const SUPABASE_KEY='sb_publishable_C_VZK5xzqaz7UkCFzll9TQ_Pyxq7Td3';
 let sb=null;try{sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){}
-const fila={};
-function nuvem(path,data){local();if(!sb)return;
- fila[path]=(fila[path]||Promise.resolve()).then(async()=>{const {error}=await sb.from('cofrin').upsert({id:path,data,updated_at:new Date().toISOString()});status(error?'off':'ok')})}
-async function carregar(){status('sync');const {data,error}=await sb.from('cofrin').select('id,data');
+const fila={};let pendentes=0;
+function nuvem(path,data){local();if(!sb)return;pendentes++;
+ fila[path]=(fila[path]||Promise.resolve()).then(async()=>{const {error}=await sb.from('cofrin').upsert({id:path,data,updated_at:new Date().toISOString()});status(error?'off':'ok')}).finally(()=>pendentes--)}
+async function carregar(){if(pendentes)return;status('sync');const {data,error}=await sb.from('cofrin').select('id,data');
  if(error)return status('off');
  if(!data.length&&Object.keys(S.meses).length){Object.keys(S.meses).forEach(saveMes);saveCfg();return}
  aplicaNuvem(data);status('ok')}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&logado)carregar()});
+addEventListener('focus',()=>{if(logado)carregar()});
+setInterval(()=>{if(logado&&!document.hidden&&!pendentes)carregar()},45000);
 let logado=false;
 async function entrar(e){e.preventDefault();const b=document.getElementById('lbtn'),msg=document.getElementById('lmsg');
  b.disabled=true;b.textContent='Entrando…';msg.textContent='';
@@ -586,8 +588,8 @@ function ponte(){
  const cx=caixa(hoje),livre=cx-pend-agend,dias=Math.max(1,diasEntre(hoje,prox.data));
  return{...prox,atrasada:prox.data<=hoje,cx,pend:pend+agend,livre,dias,porDia:livre/dias};
 }
-function futuros(n=30){
- const hoje=today(),fim=addDays(hoje,n),ev=[],m0=hoje.slice(0,7);
+function futuros(fim){
+ const hoje=today(),ev=[],m0=hoje.slice(0,7);fim=fim||addDays(hoje,30);
  for(let i=0;i<=2;i++){
   const m=addM(m0,i),M=mes(m);
   S.cfg.rendas.forEach(r=>{const d=dt(m,r.dia);if(r.estimado&&!recebeu(m,r)&&d>=hoje&&d<=fim)ev.push({d,nome:'Salário '+r.nome,t:TIPOS.receita,v:r.estimado,prev:true})});
@@ -690,10 +692,12 @@ function rPainel(m){
   return `<div class="cbar" data-tip="${esc(k2)}: ${fmt(v)} · ${Math.round(v/c.gastos*100)}% dos gastos${p?'<br>Mês anterior: '+fmt(p):''}"><span>${catT(k2,'sm')}</span><div class="nm">${esc(k2)} <em>${Math.round(v/c.gastos*100)}%${dl===null?'':` · <span class="dl">${ic(dl>0?'caret-up':'caret-down','r')}${Math.abs(dl)}%</span> vs ${mesCurto(addM(m,-1))}`}</em></div><div class="vv">${fmtK(v)}</div><div class="tr"><i style="width:${v/mx*100}%"></i></div></div>`}).join(''):'<div class="empty">Sem gastos neste mês.</div>';
  document.getElementById('ritmo').innerHTML=ritmoSVG(m,c);
  document.getElementById('seis').innerHTML=seisSVG(m);
- const F=futuros(30);
+ const hojeM=ym(new Date()),fimMes=dt(hojeM,31),F=futuros(fimMes);
  document.getElementById('futSaldo').textContent=F.ev.length?'fecha em '+fmt(F.fim):'';
  document.getElementById('futuro').innerHTML=F.ev.length?`<div class="row" style="margin-bottom:4px"><span>Em caixa hoje</span><b>${fmt(F.inicio)}</b></div>`+F.ev.map(e=>{const [,mm,d2]=e.d.split('-');
-  return `<div class="fut"><div class="dt"><b>${+d2}</b>${mesCurto(e.d.slice(0,7))}</div><div style="display:flex;gap:10px;align-items:center">${tile(e.t,'sm')}<div><p>${esc(e.nome)}</p><small>${e.atras?'vencida':e.prev?'previsto':e.tx?'agendado':'a pagar'}</small></div></div><div class="v ${e.v>0?'pos':''}">${e.v>0?'+':'−'} ${fmtK(Math.abs(e.v))}<small class="${e.saldo<0?'negc':''}" style="color:${e.saldo<0?'':'var(--mute)'}">saldo ${fmtK(e.saldo)}</small></div></div>`}).join(''):'<div class="empty">Nada previsto. Cadastre contas fixas e o valor previsto dos salários em Ajustes.</div>';
+  return `<div class="fut"><div class="dt"><b>${+d2}</b>${mesCurto(e.d.slice(0,7))}</div><div style="display:flex;gap:10px;align-items:center">${tile(e.t,'sm')}<div><p>${esc(e.nome)}</p><small>${e.atras?'vencida':e.prev?'previsto':e.tx?'agendado':'a pagar'}</small></div></div><div class="v ${e.v>0?'pos':''}">${e.v>0?'+':'−'} ${fmtK(Math.abs(e.v))}<small class="${e.saldo<0?'negc':''}" style="color:${e.saldo<0?'':'var(--mute)'}">saldo ${fmtK(e.saldo)}</small></div></div>`}).join(''):'<div class="empty">Nada mais previsto até o fim do mês.</div>';
+ const pm=addM(hojeM,1),sal=S.cfg.rendas.reduce((a,r)=>a+(r.estimado||0),0),fx=mes(pm).fixos.reduce((a,f)=>a+f.valor,0);
+ document.getElementById('proxMes').innerHTML=(sal||fx)?`<div class="row total" style="font-weight:500;font-size:13px;color:var(--mute)"><span>Em ${mesNome(pm).split(' ')[0].toLowerCase()}: entram ~${fmtK(sal)} de salários e saem ${fmtK(fx)} de contas fixas</span></div>`:'';
 }
 function ritmoSVG(m,c){
  const W=340,H=150,pl=8,pr=8,pt=10,pb=22,D=c.D,ate=c.passado?D:c.dia;
@@ -1076,7 +1080,24 @@ document.addEventListener('scroll',()=>tip.style.opacity=0,{passive:true});
 function posTip(e){const w=tip.offsetWidth;tip.style.left=Math.max(8,Math.min(innerWidth-w-8,e.clientX-w/2))+'px';tip.style.top=Math.max(8,e.clientY-tip.offsetHeight-14)+'px'}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 
-pigInit(document.getElementById('mascot'),'feliz');pigInit(document.getElementById('onbMascot'),'feliz');
+pigInit(document.getElementById('mascot'),'feliz');
+/* olhos seguem a inclinação do celular (iPhone pede permissão no 1º toque) */
+(()=>{let ativo=false,b0=null,gx=0,gy=0;
+ const onOri=e=>{if(e.gamma==null)return;ativo=true;lastMove=Date.now();
+  if(b0===null)b0=e.beta;b0+=(e.beta-b0)*.01;            // posição "neutra" vai se ajustando ao jeito que você segura
+  gx+=(Math.max(-1,Math.min(1,e.gamma/25))-gx)*.25;gy+=(Math.max(-1,Math.min(1,(e.beta-b0)/20))-gy)*.25;
+  document.querySelectorAll('.pigsvg').forEach(s=>{s.style.setProperty('--px',(gx*3.4).toFixed(2)+'px');s.style.setProperty('--py',(gy*2.8).toFixed(2)+'px')})};
+ const liga=()=>{addEventListener('deviceorientation',onOri)};
+ const D=window.DeviceOrientationEvent;if(!D)return;
+ if(typeof D.requestPermission==='function'){
+  let pediu=false;try{pediu=localStorage.getItem('cofrin.giro')}catch(e){}
+  if(pediu==='sim')D.requestPermission().then(r=>r==='granted'&&liga()).catch(()=>{});
+  const pede=()=>{removeEventListener('touchend',pede);D.requestPermission().then(r=>{try{localStorage.setItem('cofrin.giro',r==='granted'?'sim':'nao')}catch(e){};if(r==='granted')liga()}).catch(()=>{})};
+  if(pediu!=='nao')addEventListener('touchend',pede);
+ }else liga();
+ // com o celular em uso o pointermove não deve brigar com o giroscópio
+ document.addEventListener('pointermove',e=>{if(ativo&&e.pointerType==='touch')e.stopImmediatePropagation()},true);
+})();pigInit(document.getElementById('onbMascot'),'feliz');
 pigInit(document.getElementById('loginMascot'),'julga');
 const h0=location.hash.slice(1);if(['inicio','painel','caixinhas','contas'].includes(h0))view=h0;
 const atalho=h0==='falar'||h0==='lancar'?h0:null;
