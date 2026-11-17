@@ -722,10 +722,13 @@ function rInicio(m){
  document.getElementById('list').innerHTML=list.length?list.map(t=>txRow(t,m)).join(''):'<div class="empty">Nada anotado ainda. Toque no ＋ embaixo.</div>';
 }
 function rPainel(m){
- const c=calc(m),cp=calc(addM(m,-1)),sobra=c.receitas-c.fixos-c.gastos-c.guardado;
- const k=(l,v,cls='')=>`<div class="kpi ${cls}"><small>${l}</small><b>${v}</b></div>`;
+ const c=calc(m),cp=calc(addM(m,-1));
+ // salários que ainda vão cair neste mês (pelo valor previsto em Ajustes)
+ const faltam=c.passado?[]:S.cfg.rendas.filter(r=>r.estimado&&!recebeu(m,r));
+ const prev=faltam.reduce((a,r)=>a+r.estimado,0),sobra=c.receitas+prev-c.fixos-c.gastos-c.guardado;
+ const k=(l,v,cls='',sub='')=>`<div class="kpi ${cls}"><small>${l}</small><b>${v}</b>${sub?`<small style="display:block;margin-top:4px">${sub}</small>`:''}</div>`;
  retroUI();
- document.getElementById('kpis').innerHTML=k('Sobra do mês',`<span class="${sobra<0?'negc':''}">${fmt(sobra)}</span>`,'wide')+k('Entradas',fmt(c.receitas))+k('Gastos',fmt(c.gastos))+k('Contas fixas',fmt(c.fixos))+k('Guardado',fmt(c.guardado))
+ document.getElementById('kpis').innerHTML=k(prev?'Sobra prevista do mês':'Sobra do mês',`<span class="${sobra<0?'negc':''}">${fmt(sobra)}</span>`,'wide',prev?`Contando ${faltam.map(r=>'o salário de '+r.nome+' (~'+fmtK(r.estimado)+', dia '+r.dia+')').join(' e ')}, que ainda não caiu.`:'')+k('Entradas',fmt(c.receitas),'',prev?`+ ${fmtK(prev)} previsto`:'')+k('Gastos',fmt(c.gastos))+k('Contas fixas',fmt(c.fixos))+k('Guardado',fmt(c.guardado))
   +(c.passado||!c.dia?'':k('Média por dia',fmt(c.gastos/Math.max(1,c.dia)))+k('Previsão do mês',`<span class="${c.gastos/c.dia*c.D>c.M.limite?'negc':''}">${fmt(c.gastos/Math.max(1,c.dia)*c.D)}</span>`));
  // categorias
  const por={},porP={};c.M.tx.filter(t=>t.type==='gasto').forEach(t=>por[t.cat]=(por[t.cat]||0)+t.valor);
