@@ -49,6 +49,7 @@ async function enviar(payload, { excluir = null, so = null } = {}) {
       if (e.statusCode === 404 || e.statusCode === 410) await adm.from('cofrin_push').delete().eq('endpoint', s.endpoint);
     }
   }
+  console.log(JSON.stringify({ aviso: payload.title, aparelhos: (subs || []).length, enviados, falhas }));
   return { enviados, falhas };
 }
 

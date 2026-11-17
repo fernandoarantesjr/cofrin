@@ -897,11 +897,11 @@ let QUEM='';
 function aviso(itens){
  if(!window.enviaPush||!itens.length)return;
  const q=QUEM||'Alguém',cx=id=>(S.cfg.caixinhas.find(c=>c.id===id)||{}).nome||'caixinha';
- const linha=t=>t.type==='gasto'?`${t.desc||t.cat} · ${fmt(t.valor)}${t.par>1?' em '+t.par+'x':''} · ${t.cat}`:t.type==='receita'?`${t.desc||'Receita'} · ${fmt(t.valor)}`:t.type==='guardar'?`Caixinha ${cx(t.cx)} · ${fmt(t.valor)}`:t.type==='resgatar'?`Resgate da caixinha ${cx(t.cx)} · ${fmt(t.valor)}`:`${t.nome} · ${fmt(t.valor)}`;
+ const linha=t=>t.type==='gasto'?`${t.desc||t.cat} · ${fmt(t.valor)}${t.par>1?' em '+t.par+'x':''} · ${t.cat}`:t.type==='receita'?`${t.desc||'Receita'} · ${fmt(t.valor)}`:t.type==='guardar'?`Caixinha ${cx(t.cx)} · ${fmt(t.valor)}`:t.type==='resgatar'?`Resgate da caixinha ${cx(t.cx)} · ${fmt(t.valor)}`:t.type==='assin'?`${t.nome} · ${fmtR(t.valor)} por mês · cobra dia ${t.dia}`:t.type==='assinPago'?`${t.nome} · ${fmtR(t.valor)}`:t.type==='novaConta'?`${t.nome} · ${fmt(t.valor)} · vence dia ${t.dia}${t.quem?' · '+t.quem:''}`:`${t.nome} · ${fmt(t.valor)}`;
  const tp=itens[0].type;
- const title=itens.length>1?`${q} lançou ${itens.length} itens`:tp==='gasto'?`${q} lançou um gasto`:tp==='receita'?`${q} lançou uma receita`:tp==='guardar'?`${q} guardou dinheiro`:tp==='resgatar'?`${q} resgatou da caixinha`:`${q} pagou uma conta`;
+ const title=itens.length>1?`${q} lançou ${itens.length} itens`:tp==='gasto'?`${q} lançou um gasto`:tp==='receita'?`${q} lançou uma receita`:tp==='guardar'?`${q} guardou dinheiro`:tp==='resgatar'?`${q} resgatou da caixinha`:tp==='assin'?`${q} adicionou uma assinatura`:tp==='assinPago'?`${q} pagou uma assinatura`:tp==='novaConta'?`${q} criou uma conta fixa`:`${q} pagou uma conta`;
  const c=calc(ym(new Date()));
- enviaPush(title,itens.map(linha).join('\n')+(itens.some(t=>t.type==='gasto')?`\nRestam ${fmt(Math.max(0,c.resta))} no mês.`:''),tp==='pago'?'./#contas':'./#inicio');
+ enviaPush(title,itens.map(linha).join('\n')+(itens.some(t=>t.type==='gasto')?`\nRestam ${fmt(Math.max(0,c.resta))} no mês.`:''),['pago','assin','assinPago','novaConta'].includes(tp)?'./#contas':'./#inicio');
 }
 function gravaTx(t,par){
  const lista=[];
@@ -1123,18 +1123,20 @@ function salvaAssin(){
  const nome=document.getElementById('an').value.trim(),valor=rs(document.getElementById('av').value),dia=Math.min(31,Math.max(1,F.dia||1));
  if(!nome)return document.getElementById('an').focus();if(!valor)return document.getElementById('av').focus();
  const m=ym(cur),M=garante(m),novo={id:F.id||uid(),nome,valor,dia,icon:F.icon||'play-circle'};
+ if(!F.id)aviso([{type:'assin',...novo}]);
  const put=X=>{const j=X.assin.findIndex(x=>x.id===novo.id);if(j>=0)X.assin[j]={...novo};else X.assin.push({...novo})};
  put(M);Object.keys(S.meses).filter(k=>k>m).forEach(k=>{garante(k);put(S.meses[k]);saveMes(k)});
  S.cfg.assin=JSON.parse(JSON.stringify(M.assin));saveMes(m);saveCfg();closeSheet();contasModo='brl';render();
 }
 function apagaAssin(id){const m=ym(cur);[m,...Object.keys(S.meses).filter(k=>k>m)].forEach(k=>{const X=garante(k);X.assin=X.assin.filter(x=>x.id!==id);delete X.assPagos[id];saveMes(k)});
  S.cfg.assin=JSON.parse(JSON.stringify(garante(m).assin));saveCfg();closeSheet();render()}
-function togglePagoA(id){const m=ym(cur),M=garante(m);if(M.assPagos[id])delete M.assPagos[id];else M.assPagos[id]=m===ym(new Date())?today():dt(m,(M.assin.find(x=>x.id===id)||{}).dia||1);saveMes(m);render()}
+function togglePagoA(id){const m=ym(cur),M=garante(m);if(M.assPagos[id])delete M.assPagos[id];else{const a=M.assin.find(x=>x.id===id)||{};M.assPagos[id]=m===ym(new Date())?today():dt(m,a.dia||1);aviso([{type:'assinPago',nome:a.nome,valor:a.valor}])}saveMes(m);render()}
 function salvaReserva(){const m=ym(cur),v=rs(document.getElementById('rv').value);garante(m).reservaBRL=v;Object.keys(S.meses).filter(k=>k>m).forEach(k=>{S.meses[k].reservaBRL=v;saveMes(k)});S.cfg.reservaBRL=v;saveMes(m);saveCfg();closeSheet();render()}
 function salvaFixo(){
  const nome=document.getElementById('fn').value.trim(),valor=gs(document.getElementById('fx').value),dia=Math.min(31,Math.max(1,F.dia||1));
  if(!nome)return document.getElementById('fn').focus();if(!valor)return document.getElementById('fx').focus();
  const m=ym(cur),M=garante(m),novo={id:F.id||uid(),nome,valor,dia,quem:F.quem||'',cat:F.cat||'Contas'};
+ if(!F.id)aviso([{type:'novaConta',...novo}]);
  const i=M.fixos.findIndex(f=>f.id===novo.id);if(i>=0)M.fixos[i]=novo;else M.fixos.push(novo);
  // meses futuros já criados também recebem a mudança
  Object.keys(S.meses).filter(k=>k>m).forEach(k=>{const X=S.meses[k],j=X.fixos.findIndex(f=>f.id===novo.id);if(j>=0)X.fixos[j]={...novo};else X.fixos.push({...novo});saveMes(k)});
