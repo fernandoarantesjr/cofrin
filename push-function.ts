@@ -69,14 +69,14 @@ async function manha() {
     const k = dia.slice(0, 7), M = mes(k);
     for (const f of M.fixos || []) {
       if (M.pagos?.[f.id] || dtm(k, f.dia || 1) !== dia) continue;
-      avisos.push({ title: rot === 'atrasada' ? `⚠️ Conta atrasada: ${f.nome}` : `🧾 ${f.nome} ${rot}`, body: `${fmt(f.valor)}${f.quem ? ' · ' + f.quem + ' paga' : ''}. Marque ✓ em Contas quando pagar.`, tag: 'conta-' + f.id + '-' + k, url: './#contas' });
+      avisos.push({ title: rot === 'atrasada' ? `Conta atrasada: ${f.nome}` : `${f.nome} ${rot}`, body: `${fmt(f.valor)}${f.quem ? ' · ' + f.quem + ' paga' : ''}. Marque como paga em Contas.`, tag: 'conta-' + f.id + '-' + k, url: './#contas' });
     }
   }
   // dia de salário
   const M = mes(m);
   for (const r of cfg.rendas || []) {
     if (dtm(m, r.dia) !== hoje || (M.tx || []).some((t) => t.type === 'receita' && t.renda === r.id)) continue;
-    avisos.push({ title: `💰 Hoje é dia do salário de ${r.nome}`, body: 'Quando cair e trocar pra guaraní, lance no Cofrin com a cotação do dia.', tag: 'salario-' + r.id + '-' + m, url: './#inicio' });
+    avisos.push({ title: `Hoje é dia do salário de ${r.nome}`, body: 'Quando cair e trocar pra guaraní, lance no Cofrin com a cotação do dia.', tag: 'salario-' + r.id + '-' + m, url: './#inicio' });
   }
   // ritmo do mês (avisa uma vez ao acelerar e uma vez ao estourar)
   const gastos = (M.tx || []).filter((t) => t.type === 'gasto').reduce((a, t) => a + t.valor, 0);
@@ -87,8 +87,8 @@ async function manha() {
   const nivel = { ok: 0, rapido: 1, estourou: 2 };
   if (nivel[estado] > nivel[reg[m] || 'ok']) {
     avisos.push(estado === 'estourou'
-      ? { title: '😤 Limite do mês estourado', body: `Passaram ${fmt(-resta)} do limite de ${fmt(lim)}. Eu avisei. Eu SEMPRE aviso.`, tag: 'ritmo-' + m, url: './#painel' }
-      : { title: '🐷 Vocês aceleraram', body: `Já foram ${fmt(gastos)} de ${fmt(lim)}. Pra fechar no limite: ${fmt(resta / diasRest)} por dia.`, tag: 'ritmo-' + m, url: './#painel' });
+      ? { title: 'Limite do mês estourado', body: `Passaram ${fmt(-resta)} do limite de ${fmt(lim)}. Eu avisei. Eu SEMPRE aviso.`, tag: 'ritmo-' + m, url: './#painel' }
+      : { title: 'Vocês aceleraram', body: `Já foram ${fmt(gastos)} de ${fmt(lim)}. Pra fechar no limite: ${fmt(resta / diasRest)} por dia.`, tag: 'ritmo-' + m, url: './#painel' });
     reg[m] = estado; await adm.from('cofrin_segredos').upsert({ id: 'avisos', valor: reg });
   }
   const res = [];
@@ -107,9 +107,9 @@ async function semana() {
   const [y, mm] = m.split('-').map(Number), D = new Date(Date.UTC(y, mm, 0)).getUTCDate(), diasRest = Math.max(1, D - +hoje.slice(8) + 1);
   const resta = (M.limite || cfg.limite) - gastos;
   const body = tot
-    ? `Gastaram ${fmt(tot)} em ${tx.length} lançamentos. Mais em ${CATE[top[0]] || ''} ${top[0]} (${fmtK(top[1])}). ` + (resta >= 0 ? `Pra fechar o mês: ${fmt(resta / diasRest)} por dia.` : `O mês já passou ${fmt(-resta)} do limite.`)
-    : 'Nenhum gasto lançado na semana. Economia ou esquecimento? 👀';
-  return { hoje, ...(await enviar({ title: '📊 Resumo da semana', body, tag: 'semana-' + hoje, url: './#painel' })) };
+    ? `Gastaram ${fmt(tot)} em ${tx.length} lançamentos. Mais em ${top[0]} (${fmtK(top[1])}). ` + (resta >= 0 ? `Pra fechar o mês: ${fmt(resta / diasRest)} por dia.` : `O mês já passou ${fmt(-resta)} do limite.`)
+    : 'Nenhum gasto lançado na semana. Economia ou esquecimento?';
+  return { hoje, ...(await enviar({ title: 'Resumo da semana', body, tag: 'semana-' + hoje, url: './#painel' })) };
 }
 
 Deno.serve(async (req) => {

@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
   try {
     const em = String(email).trim().toLowerCase(), quem = em.charAt(0).toUpperCase() + em.split('@')[0].slice(1);
     const CATE = { Mercado: '🛒', Comida: '🍔', Delivery: '🛵', Transporte: '🚗', Casa: '🏠', 'Bebê': '🍼', 'Saúde': '💊', Lazer: '🎮', Compras: '🛍️', Contas: '🧾', Pets: '🐾', Outros: '✨' };
-    const linhas = its.map((o) => o.tipo === 'gasto' ? `${CATE[o.cat] || '✨'} ${o.desc || o.cat} · ${fmt(o.valor)}${o.par > 1 ? ' em ' + o.par + 'x' : ''}` : o.tipo === 'receita' ? `💰 ${o.brl ? 'R$ ' + o.valor.toLocaleString('pt-BR') : fmt(o.valor)}` : `🐷 Guardou ${fmt(o.valor)}`);
+    const linhas = its.map((o) => o.tipo === 'gasto' ? `${o.desc || o.cat} · ${fmt(o.valor)}${o.par > 1 ? ' em ' + o.par + 'x' : ''} · ${o.cat}` : o.tipo === 'receita' ? `Receita · ${o.brl ? 'R$ ' + o.valor.toLocaleString('pt-BR') : fmt(o.valor)}` : `Caixinha · ${fmt(o.valor)}`);
     const title = its.length > 1 ? `${quem} lançou ${its.length} itens (Siri)` : its[0].tipo === 'gasto' ? `${quem} lançou um gasto (Siri)` : its[0].tipo === 'receita' ? `${quem} lançou uma receita (Siri)` : `${quem} guardou dinheiro (Siri)`;
     await fetch(SB_URL + '/functions/v1/push', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: ANON, Authorization: 'Bearer ' + sess.session.access_token }, body: JSON.stringify({ acao: 'avisar', title, body: linhas.join('\n') + `\nRestam ${fmt(Math.max(0, resta))} no mês.`, url: './#inicio' }) });
   } catch (_) { /* aviso é opcional */ }
