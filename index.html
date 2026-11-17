@@ -512,7 +512,7 @@ const CUTUCA=['Ei! Sem cutucar o cofre.','Tô de olho em você.','Cócegas não 
 /* ---------- falas ---------- */
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const FALAS={
- cheio:l=>[`Mês novo, limite cheio: ${l}. Respira antes de pedir delivery.`,`${l} intactos. Não me decepciona.`],
+ cheio:l=>[`${l} livres e nenhum gasto ainda. Respira antes de pedir delivery.`,`${l} intactos. Não me decepciona.`],
  eco:d=>[`Olha só, economizando. Dá ${d} por dia e sobra.`,`Tô orgulhoso. Mas não se acostuma.`],
  ritmo:d=>[`No ritmo. Dá ${d} por dia.`,`Tá controlado… por enquanto. ${d}/dia.`],
  rapido:d=>[`Calma lá. Agora são só ${d} por dia.`,`Tá gastando mais rápido que o mês passa. ${d}/dia, hein.`],
@@ -594,27 +594,51 @@ function txRow(t,m){
   <div class="d"><p>${esc(nome)}</p><small>${dd(t.date)}${info?' · '+esc(info):''}${futuro?' · agendado':''}</small></div>
   <div class="v ${sinal(t)>0?'pos':''}">${sinal(t)>0?'+':'−'} ${fmt(t.valor)}</div></button>`;
 }
+/* período atual = da última entrada de salário até a próxima */
+function periodo(pp){
+ const hoje=today(),m=hoje.slice(0,7);
+ const ini=S.cfg.rendas.map(r=>{const d=dt(m,r.dia);return d<=hoje?d:dt(addM(m,-1),r.dia)}).sort().pop()||m+'-01';
+ const gastos=todasTx().filter(t=>t.type==='gasto'&&t.date>=ini&&t.date<=hoje).reduce((a,t)=>a+t.valor,0);
+ const total=Math.max(1,diasEntre(ini,pp.data)),passados=diasEntre(ini,hoje);
+ return{ini,gastos,base:pp.livre+gastos,total,passados};
+}
 function rInicio(m){
  const c=calc(m);
- const pct=Math.max(0,Math.min(1,c.resta/c.M.limite)),arc=document.getElementById('arc');
- arc.style.strokeDashoffset=100-pct*100;arc.style.stroke=c.resta<0||pct<.15?'var(--bad)':'var(--acc)';
- setMood(document.getElementById('mascot'),faceExtra||humor[c.estado]);
- const L=document.getElementById('left');L.className='amount big'+(c.resta<0?' neg':'');
- L.textContent=(c.resta<0?'−':'')+fmt(Math.abs(c.resta));
- document.getElementById('leftLbl').textContent=c.passado?(c.resta<0?'Passou do limite':'Sobrou do limite'):'Pode gastar no mês';
- document.getElementById('of').textContent=`de ${fmt(c.M.limite)}`+(c.passado?'':` · ${c.diasRest} ${c.diasRest>1?'dias':'dia'}`);
- const [pt,pc]=paceTxt[c.estado],P=document.getElementById('pace');P.querySelector('span').textContent=pt;P.querySelector('i').style.background=pc;
- const ehHoje=m===ym(new Date()),pp=ehHoje?ponte():null;
- const arg={cheio:fmt(c.M.limite),estourou:fmt(-c.resta),passado:fmt(c.resta)}[c.estado]||fmt(pp&&!pp.atrasada?Math.min(pp.porDia,c.porDia):c.porDia);
- document.getElementById('bubble').textContent=falaExtra||(pp&&!pp.atrasada&&pp.livre<0?`Faltam ${fmt(-pp.livre)} pras contas até ${pp.r.nome} receber. Segura a carteira.`:pick(FALAS[c.estado](arg)));
+ const ehHoje=m===ym(new Date()),pp=ehHoje?ponte():null,usaPonte=pp&&!pp.atrasada;
+ let pct,valor,rot,sub,estado,porDia;
+ if(usaPonte){
+  // dinheiro de verdade: caixa − contas e parcelas até o próximo salário
+  const P=periodo(pp);
+  valor=pp.livre;porDia=pp.porDia;
+  pct=P.base>0?Math.max(0,Math.min(1,pp.livre/P.base)):0;
+  const ideal=1-P.passados/P.total; // quanto deveria sobrar, proporcional aos dias
+  estado=pp.livre<0?'estourou':P.gastos===0?'cheio':pct<ideal*.85?'rapido':pct>ideal*1.15?'eco':'ritmo';
+  const [,mm,d2]=pp.data.split('-');
+  rot=`Livre até ${pp.r.nome} receber`;
+  sub=pp.livre<0?`faltam pras contas até dia ${+d2}`:`${fmt(Math.max(0,porDia))} por dia · ${pp.dias} ${pp.dias>1?'dias':'dia'} até ${+d2}/${mm}`;
+ }else{
+  valor=c.resta;porDia=c.porDia;estado=c.estado;
+  pct=Math.max(0,Math.min(1,c.resta/c.M.limite));
+  rot=c.passado?(c.resta<0?'Passou do limite':'Sobrou do limite'):'Pode gastar no mês';
+  sub=`de ${fmt(c.M.limite)}`+(c.passado?'':` · ${c.diasRest} ${c.diasRest>1?'dias':'dia'}`);
+ }
+ const arc=document.getElementById('arc');
+ arc.style.strokeDashoffset=100-pct*100;arc.style.stroke=valor<0||pct<.15?'var(--bad)':'var(--acc)';
+ setMood(document.getElementById('mascot'),faceExtra||humor[estado]);
+ const L=document.getElementById('left');L.className='amount big'+(valor<0?' neg':'');
+ L.textContent=(valor<0?'−':'')+fmt(Math.abs(valor));
+ document.getElementById('leftLbl').textContent=rot;
+ document.getElementById('of').textContent=sub;
+ const [pt,pc]=paceTxt[estado],P2=document.getElementById('pace');P2.querySelector('span').textContent=pt;P2.querySelector('i').style.background=pc;
+ const arg={cheio:fmt(usaPonte?pp.livre:c.M.limite),estourou:fmt(-valor),passado:fmt(c.resta)}[estado]||fmt(Math.max(0,porDia));
+ document.getElementById('bubble').textContent=falaExtra||(usaPonte&&pp.livre<0?`Faltam ${fmt(-pp.livre)} pras contas até ${pp.r.nome} receber. Segura a carteira.`:pick(FALAS[estado](arg)));
  falaExtra=null;faceExtra=null;
  window.extraInicio&&extraInicio();
  const pe=document.getElementById('ponte');pe.style.display=pp?'':'none';
  if(pp){const [,mm,d2]=pp.data.split('-');
   pe.innerHTML=pp.atrasada?`<h3>Entrada do dia ${+d2}</h3><div class="dia">${esc(pp.r.nome)} ainda não lançou</div><div class="row"><span>Em caixa agora</span><span>${fmt(pp.cx)}</span></div><button class="cta alt" style="margin-top:8px" onclick="openLancar(null,null,{tipo:'receita',renda:'${pp.r.id}'})">Lançar o que caiu</button>`
-  :`<h3>Até ${esc(pp.r.nome)} receber <span>dia ${+d2}/${mm}</span></h3>
-   <div class="dia ${pp.livre<0?'negc':''}">${pp.livre<0?'−'+fmt(-pp.livre):fmt(pp.porDia)} <small>${pp.livre<0?'faltando':'por dia · '+pp.dias+(pp.dias>1?' dias':' dia')}</small></div>
-   <div class="row"><span>Em caixa</span><span>${fmt(pp.cx)}</span></div>
+  :`<h3>De onde vem esse valor <span>até dia ${+d2}/${mm}</span></h3>
+   <div class="row"><span>Dinheiro em caixa hoje</span><span>${fmt(pp.cx)}</span></div>
    <div class="row"><span>Contas e agendados até lá</span><span>− ${fmt(pp.pend)}</span></div>
    <div class="row total"><span>Livre pra gastar</span><span>${fmt(pp.livre)}</span></div>`}
  document.getElementById('entradas').innerHTML=`<h3>Entradas do mês</h3>`+S.cfg.rendas.map(r=>{
