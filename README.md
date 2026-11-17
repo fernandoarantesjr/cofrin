@@ -52,3 +52,10 @@ Supabase → **Authentication → Users** → o usuário → *Reset password* ou
 - Todo dia às 9h: contas que vencem amanhã/hoje/atrasadas, dia de salário, ritmo do mês.
 - Domingo às 20h: resumo da semana.
 - Peças: `push-function.ts` (função `push`), `push.sql` (tabelas e agendamentos), `sw.js`.
+
+## Widget do porquinho (iPhone, app Scriptable)
+1. Instale o **Scriptable** (grátis na App Store).
+2. Crie um script novo, cole o conteúdo de `widget/instalar.js` e rode → cria o script **Cofrin**.
+3. Abra o **Cofrin** no Scriptable e rode uma vez: ele pede e-mail e senha (ficam nas Chaves do iPhone).
+4. Tela inicial → segure → **+** → Scriptable → pequeno ou médio → toque no widget → Script: **Cofrin**.
+   Também funciona na tela de bloqueio.
