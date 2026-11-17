@@ -184,8 +184,8 @@ migra();
 const local=()=>{try{localStorage.setItem(LKEY,JSON.stringify(S))}catch(e){}};
 
 /* ====== CONFIGURAÇÃO DO SUPABASE (cole aqui os dados do seu projeto) ====== */
-const SUPABASE_URL='COLE_AQUI_A_PROJECT_URL';
-const SUPABASE_KEY='COLE_AQUI_A_ANON_PUBLIC_KEY';
+const SUPABASE_URL='https://thsdxhvikpuhfzcohano.supabase.co';
+const SUPABASE_KEY='sb_publishable_C_VZK5xzqaz7UkCFzll9TQ_Pyxq7Td3';
 /* ======================================================================== */
 let sb=null;
 try{if(!/^https:\/\//.test(SUPABASE_URL))throw 0;sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){}
