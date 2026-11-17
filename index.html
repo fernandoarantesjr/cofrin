@@ -25,7 +25,7 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
 .gauge{position:relative;width:250px;height:230px;margin:6px auto 0}
 .gauge svg.ring{position:absolute;inset:0}
 .ring path{transition:stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1),stroke .4s}
-.mascot{position:absolute;left:50%;top:44%;width:112px;height:112px;transform:translate(-50%,-50%)}
+.mascot{position:absolute;left:50%;top:44%;width:138px;height:128px;transform:translate(-50%,-50%)}
 .mascot.jump{animation:jump .5s}
 .center{text-align:center;margin-top:-40px;position:relative}
 .center small{color:var(--mute);font-size:13px}
@@ -72,6 +72,56 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
 .pill button{border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-size:13px}
 .pill button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ===== porquinho ===== */
+.pigsvg{overflow:visible;cursor:pointer;-webkit-user-select:none;user-select:none}
+.pigsvg *{transform-box:fill-box}
+.pigsvg .rig,.pigsvg .act,.pigsvg .pig{transform-box:view-box;transform-origin:70px 118px}
+.pigsvg .pig{animation:pBreathe 3.2s ease-in-out infinite}
+@keyframes pBreathe{50%{transform:scale(1.025,1.04)}}
+.pigsvg .ear{transform-origin:50% 100%;animation:pEar 5s infinite}
+.pigsvg .earR{animation-delay:2.3s}
+@keyframes pEar{0%,88%,100%{transform:rotate(0)}91%{transform:rotate(-16deg)}95%{transform:rotate(6deg)}}
+.pigsvg .tail{transform-origin:100% 50%;animation:pTail 1.6s ease-in-out infinite}
+@keyframes pTail{50%{transform:rotate(-18deg)}}
+.pigsvg .body{fill:#ffb8c6;transition:fill .4s}
+.pigsvg.m-bravo .body{fill:#ff8fa5}
+.pigsvg .eyes{transform:translate(var(--px,0px),var(--py,0px));transition:transform .18s ease-out}
+.pigsvg .face{transform:translate(calc(var(--px,0px)*.45),calc(var(--py,0px)*.45));transition:transform .2s ease-out}
+.pigsvg .blink{transform-origin:50% 50%;animation:pBlink 4.2s infinite}
+@keyframes pBlink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+.pigsvg .v{opacity:0;transition:opacity .25s}
+.m-feliz .ey-h,.m-feliz .mo-s,.m-feliz .bl,.m-feliz .fx-spark,
+.m-ok .ey-n,.m-ok .mo-s,.m-ok .bl,
+.m-julga .ey-l,.m-julga .mo-f,.m-julga .br,.m-julga .fx-sweat,
+.m-bravo .ey-n,.m-bravo .mo-d,.m-bravo .br,.m-bravo .fx-steam,
+.m-choque .ey-b,.m-choque .mo-o,.m-choque .br{opacity:1}
+.pigsvg .brL,.pigsvg .brR{transform-origin:50% 50%;transition:transform .3s}
+.m-julga .brL{transform:translateY(-4px) rotate(-12deg)}.m-julga .brR{transform:translateY(2px) rotate(8deg)}
+.m-bravo .brL{transform:translateY(3px) rotate(20deg)}.m-bravo .brR{transform:translateY(3px) rotate(-20deg)}
+.m-choque .brL,.m-choque .brR{transform:translateY(-6px)}
+.m-bravo .rig{animation:pShake .35s 4}
+.m-choque .rig{animation:pHop .6s}
+@keyframes pShake{25%{transform:translateX(-3px) rotate(-1.5deg)}75%{transform:translateX(3px) rotate(1.5deg)}}
+@keyframes pHop{30%{transform:translateY(-16px) scale(.94,1.07)}60%{transform:scale(1.08,.92)}}
+.act.sq{animation:pSq .6s}
+.act.flinch{animation:pFlinch .55s}
+.act.hop{animation:pHop .6s}
+@keyframes pSq{25%{transform:scale(1.14,.84)}55%{transform:scale(.93,1.09)}80%{transform:scale(1.03,.97)}}
+@keyframes pFlinch{20%{transform:translateX(-5px) rotate(-5deg) scale(.96)}50%{transform:translateX(4px) rotate(3deg)}}
+.fx-steam circle{animation:pSteam 1.3s ease-out infinite;transform-origin:50% 50%}
+.fx-steam circle:nth-child(2){animation-delay:.45s}.fx-steam circle:nth-child(3){animation-delay:.9s}
+@keyframes pSteam{0%{transform:translateY(0) scale(.6);opacity:.9}100%{transform:translateY(-16px) scale(1.7);opacity:0}}
+.fx-spark path{animation:pTw 1.4s ease-in-out infinite;transform-origin:50% 50%}
+.fx-spark path:nth-child(2){animation-delay:.5s}.fx-spark path:nth-child(3){animation-delay:.9s}
+@keyframes pTw{0%,100%{transform:scale(.3) rotate(0)}50%{transform:scale(1) rotate(45deg)}}
+.fx-sweat path{animation:pSweat 1.8s ease-in infinite}
+@keyframes pSweat{0%{transform:translateY(-4px);opacity:0}20%{opacity:1}100%{transform:translateY(14px);opacity:0}}
+.coinfx{opacity:0}
+.coinfx.in{animation:pCin .75s cubic-bezier(.5,0,.9,.6) forwards}
+.coinfx.out{animation:pCout .9s cubic-bezier(.2,.7,.4,1) forwards}
+@keyframes pCin{0%{opacity:1;transform:translateY(-34px)}75%{opacity:1;transform:translateY(30px) scaleX(.35)}100%{opacity:0;transform:translateY(34px) scaleX(.1)}}
+@keyframes pCout{0%{opacity:1;transform:translateY(30px)}100%{opacity:0;transform:translate(46px,-36px) rotate(540deg)}}
 /* sheet */
 .veil{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:.25s;z-index:5}
 .veil.on{opacity:1;pointer-events:auto}
@@ -107,7 +157,7 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
 </head>
 <body>
 <div class="onb" id="login" style="display:none"><form class="in" onsubmit="entrar(event)">
-  <svg viewBox="0 0 120 120" style="width:110px;height:110px;margin:0 auto" id="loginMascot"></svg>
+  <svg viewBox="0 0 140 130" style="width:150px;height:140px;margin:0 auto" id="loginMascot"></svg>
   <h1>cofrin</h1>
   <p class="t">Área restrita. Só entra quem tem acesso.</p>
   <input class="field" id="lemail" type="email" placeholder="E-mail" autocomplete="username" required>
@@ -128,7 +178,7 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
       <path d="M57 193 A95 95 0 1 1 193 193" fill="none" stroke="#f0eeeb" stroke-width="16" stroke-linecap="round"/>
       <path id="arc" d="M57 193 A95 95 0 1 1 193 193" fill="none" stroke="var(--acc)" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/>
     </svg>
-    <svg class="mascot" id="mascot" viewBox="0 0 120 120"></svg>
+    <svg class="mascot" id="mascot" viewBox="0 0 140 130" onclick="cutuca()"></svg>
   </div>
   <div class="center">
     <small>Pode gastar</small>
@@ -156,7 +206,7 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
 <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
 
 <div class="onb" id="onb" style="display:none"><div class="in">
-  <svg viewBox="0 0 120 120" style="width:120px;height:120px;margin:0 auto" id="onbMascot"></svg>
+  <svg viewBox="0 0 140 130" style="width:150px;height:140px;margin:0 auto" id="onbMascot"></svg>
   <h1>cofrin</h1>
   <p class="t">Seu cofrinho que te julga. Pra você saber quanto ainda pode gastar no mês.</p>
   <div class="feat"><b>+</b>Anote um gasto em dois toques</div>
@@ -267,7 +317,55 @@ const FACES={
  bravo:`<path d="M36 42l18 8M84 42l-18 8" stroke="#3a2600" stroke-width="6" stroke-linecap="round"/><circle class="eye" cx="46" cy="58" r="5" fill="#3a2600"/><circle class="eye" cx="74" cy="58" r="5" fill="#3a2600"/><path d="M46 80q14-12 28 0" stroke="#3a2600" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M92 30q4 8 0 12q-4-4 0-12z" fill="#5ab0ff"/>`,
  choque:`<circle class="eye" cx="46" cy="52" r="8" fill="#fff" stroke="#3a2600" stroke-width="4"/><circle cx="46" cy="52" r="3" fill="#3a2600"/><circle class="eye" cx="74" cy="52" r="8" fill="#fff" stroke="#3a2600" stroke-width="4"/><circle cx="74" cy="52" r="3" fill="#3a2600"/><ellipse cx="60" cy="78" rx="7" ry="9" fill="#3a2600"/>`
 };
-const coin=f=>`<circle cx="60" cy="62" r="50" fill="var(--coin2)"/><circle cx="60" cy="58" r="50" fill="var(--coin)"/><circle cx="60" cy="58" r="41" fill="none" stroke="var(--coin2)" stroke-width="3" stroke-dasharray="4 5"/><path d="M30 36q8-12 22-16" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".6"/>${FACES[f]}`;
+
+/* ---------- porquinho: humor, olhar e reações ---------- */
+const PIG=`<ellipse cx="70" cy="122" rx="38" ry="5" fill="#000" opacity=".08"/>
+<g class="coinfx"><circle cx="70" cy="4" r="8" fill="#f6b93b" stroke="#d98e12" stroke-width="2"/><circle cx="70" cy="4" r="4" fill="none" stroke="#d98e12" stroke-width="1.5"/></g>
+<g class="rig"><g class="act"><g class="pig">
+ <path class="tail" d="M24 74q-13-1-11-10q2-7 9-3q4 4-2 7" fill="none" stroke="#f29bb0" stroke-width="4" stroke-linecap="round"/>
+ <rect x="34" y="98" width="14" height="19" rx="6" fill="#ef8fa6"/><rect x="92" y="98" width="14" height="19" rx="6" fill="#ef8fa6"/>
+ <g class="ear earL"><path d="M38 46L33 21L57 36Z" fill="#ffa3b6" stroke="#ffa3b6" stroke-width="6" stroke-linejoin="round"/><path d="M40 40L38 28L50 36Z" fill="#ff7f9b" stroke="#ff7f9b" stroke-width="2" stroke-linejoin="round"/></g>
+ <g class="ear earR"><path d="M102 46L107 21L83 36Z" fill="#ffa3b6" stroke="#ffa3b6" stroke-width="6" stroke-linejoin="round"/><path d="M100 40L102 28L90 36Z" fill="#ff7f9b" stroke="#ff7f9b" stroke-width="2" stroke-linejoin="round"/></g>
+ <ellipse class="body" cx="70" cy="72" rx="49" ry="41"/>
+ <ellipse cx="70" cy="88" rx="38" ry="22" fill="#ff9fb3" opacity=".35"/>
+ <ellipse cx="50" cy="46" rx="13" ry="6" fill="#fff" opacity=".4" transform="rotate(-22 50 46)"/>
+ <rect x="59" y="33" width="22" height="5" rx="2.5" fill="#c4566f"/>
+ <rect x="46" y="100" width="14" height="17" rx="6" fill="#ffa3b6"/><rect x="80" y="100" width="14" height="17" rx="6" fill="#ffa3b6"/>
+ <g class="face">
+  <g class="v bl"><ellipse cx="40" cy="76" rx="8" ry="4.5" fill="#ff6f8e" opacity=".45"/><ellipse cx="100" cy="76" rx="8" ry="4.5" fill="#ff6f8e" opacity=".45"/></g>
+  <g class="v br"><path class="brL" d="M46 50q7-4 14 0" fill="none" stroke="#3b1d26" stroke-width="3.2" stroke-linecap="round"/><path class="brR" d="M80 50q7-4 14 0" fill="none" stroke="#3b1d26" stroke-width="3.2" stroke-linecap="round"/></g>
+  <g class="eyes">
+   <g class="v ey-n"><g class="blink"><ellipse cx="53" cy="62" rx="5.2" ry="6.8" fill="#3b1d26"/><circle cx="51.4" cy="59.6" r="1.8" fill="#fff"/></g><g class="blink"><ellipse cx="87" cy="62" rx="5.2" ry="6.8" fill="#3b1d26"/><circle cx="85.4" cy="59.6" r="1.8" fill="#fff"/></g></g>
+   <g class="v ey-h"><path d="M46 64q7-9 14 0M80 64q7-9 14 0" fill="none" stroke="#3b1d26" stroke-width="3.6" stroke-linecap="round"/></g>
+   <g class="v ey-l"><ellipse cx="53" cy="64" rx="5.2" ry="3.4" fill="#3b1d26"/><ellipse cx="87" cy="64" rx="5.2" ry="3.4" fill="#3b1d26"/><path d="M46 60.5h14M80 60.5h14" stroke="#3b1d26" stroke-width="3" stroke-linecap="round"/></g>
+   <g class="v ey-b"><circle cx="53" cy="61" r="8.5" fill="#fff" stroke="#3b1d26" stroke-width="2.6"/><circle cx="53" cy="61" r="3.6" fill="#3b1d26"/><circle cx="87" cy="61" r="8.5" fill="#fff" stroke="#3b1d26" stroke-width="2.6"/><circle cx="87" cy="61" r="3.6" fill="#3b1d26"/></g>
+  </g>
+  <ellipse cx="70" cy="79" rx="15" ry="10" fill="#ff93aa" stroke="#f07d97" stroke-width="1.5"/>
+  <ellipse cx="64.5" cy="79" rx="2.4" ry="3.6" fill="#b54a63"/><ellipse cx="75.5" cy="79" rx="2.4" ry="3.6" fill="#b54a63"/>
+  <path class="v mo-s" d="M63 93q7 6 14 0" fill="none" stroke="#3b1d26" stroke-width="3" stroke-linecap="round"/>
+  <path class="v mo-f" d="M64 94h12" stroke="#3b1d26" stroke-width="3" stroke-linecap="round"/>
+  <path class="v mo-d" d="M62 97q8-7 16 0" fill="none" stroke="#3b1d26" stroke-width="3" stroke-linecap="round"/>
+  <ellipse class="v mo-o" cx="70" cy="95" rx="4" ry="5" fill="#3b1d26"/>
+ </g>
+</g></g></g>
+<g class="v fx-steam" fill="#cfc9c3"><circle cx="30" cy="18" r="4"/><circle cx="110" cy="18" r="4"/><circle cx="34" cy="12" r="3"/></g>
+<g class="v fx-spark" fill="#f6b93b"><path transform="translate(18 40)" d="M0-6L1.4-1.4 6 0 1.4 1.4 0 6-1.4 1.4-6 0-1.4-1.4Z"/><path transform="translate(124 50)" d="M0-6L1.4-1.4 6 0 1.4 1.4 0 6-1.4 1.4-6 0-1.4-1.4Z"/><path transform="translate(116 100)" d="M0-5L1.2-1.2 5 0 1.2 1.2 0 5-1.2 1.2-5 0-1.2-1.2Z"/></g>
+<g class="v fx-sweat"><path d="M110 44q6 8 0 11q-6-3 0-11z" fill="#7cc4ff"/></g>`;
+function pigInit(el,m){el.innerHTML=PIG;el.classList.add('pigsvg');setMood(el,m||'feliz')}
+function setMood(el,m){[...el.classList].filter(c=>c.startsWith('m-')).forEach(c=>el.classList.remove(c));el.classList.add('m-'+m)}
+function act(name,sel){const el=document.querySelector('#mascot '+(sel||'.act'));if(!el)return;el.classList.remove('sq','flinch','hop','in','out');el.getBoundingClientRect();el.classList.add(name)}
+const coinIn=()=>{act('in','.coinfx');setTimeout(()=>act('sq'),520)};
+const coinOut=()=>{act('out','.coinfx');act('flinch')};
+function jump(){act('sq')}
+let lastMove=0;
+function olhar(x,y){document.querySelectorAll('.pigsvg').forEach(s=>{const r=s.getBoundingClientRect();if(!r.width)return;
+ const dx=x-(r.left+r.width/2),dy=y-(r.top+r.height*.45),d=Math.hypot(dx,dy)||1,k=Math.min(1,d/180);
+ s.style.setProperty('--px',(dx/d*3.2*k).toFixed(2)+'px');s.style.setProperty('--py',(dy/d*2.6*k).toFixed(2)+'px')})}
+document.addEventListener('pointermove',e=>{lastMove=Date.now();olhar(e.clientX,e.clientY)});
+document.addEventListener('pointerdown',e=>{lastMove=Date.now();olhar(e.clientX,e.clientY)});
+setInterval(()=>{if(Date.now()-lastMove<4000)return; // sem dedo na tela: olha em volta sozinho
+ olhar(innerWidth*Math.random(),innerHeight*(.2+Math.random()*.6))},2600);
+const CUTUCA=['Ei! Sem cutucar o cofre.','Tô de olho em você.','Cócegas não aumentam o saldo.','Cutucar não faz dinheiro brotar.','Oink. Agora volta a economizar.'];
 
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const FALAS={
@@ -330,7 +428,7 @@ function render(){
  const arc=document.getElementById('arc');
  arc.style.strokeDashoffset=100-pct*100;
  arc.style.stroke=c.resta<0||pct<.15?'var(--bad)':'var(--acc)';
- document.getElementById('mascot').innerHTML=coin(faceExtra||humor[c.estado]);
+ setMood(document.getElementById('mascot'),faceExtra||humor[c.estado]);
  const L=document.getElementById('left');
  L.className='amount big'+(c.resta<0?' neg':'');
  L.textContent=(c.resta<0?'−':'')+fmt(Math.abs(c.resta));
@@ -451,7 +549,7 @@ function addGasto(){
  const lim=mes(t.date.slice(0,7)).limite;
  if(v>=lim*.25){falaExtra=pick(FALAS.grande);faceExtra='choque'}
  else if(t.cat==='Delivery'){falaExtra=pick(FALAS.delivery);faceExtra='julga'}
- render();jump();
+ render();coinOut();
 }
 function addReceita(){
  const brl=recMoeda==='BRL',raw=document.getElementById('fv').value;
@@ -463,7 +561,7 @@ function addReceita(){
   Object.assign(t,{brl:v,cot:c,valor:Math.round(v*c)});
   if(S.cfg.cot!==c){S.cfg.cot=c;saveCfg()}
  }else{t.valor=gs(raw);if(t.valor<=0)return document.getElementById('fv').focus()}
- pushTx(t);falaExtra=pick(FALAS.receita);faceExtra='feliz';render();jump();
+ pushTx(t);falaExtra=pick(FALAS.receita);faceExtra='feliz';render();coinIn();
 }
 function addFixo(){
  const n=document.getElementById('fn').value.trim(),v=gs(document.getElementById('fx').value);if(!n||v<=0)return;
@@ -486,11 +584,12 @@ function setLimite(){
  const v=gs(document.getElementById('fl').value);if(v<=0)return;
  const m=ym(cur);garante(m).limite=v;S.cfg.limite=v;saveMes(m);saveCfg();closeSheet();render();jump();
 }
+function cutuca(){const b=document.getElementById('bubble');b.textContent=pick(CUTUCA);act('sq')}
 function finishOnb(){try{localStorage.setItem('cofrin.onb','1')}catch(e){}document.getElementById('onb').style.display='none';openSheet('ajustes')}
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();if(e.key==='Enter'&&document.getElementById('sheet').classList.contains('on')){const b=document.querySelector('#sheet .cta');b&&b.click()}});
-document.getElementById('onbMascot').innerHTML=coin('feliz');
-document.getElementById('loginMascot').innerHTML=coin('julga');
+pigInit(document.getElementById('mascot'),'feliz');pigInit(document.getElementById('onbMascot'),'feliz');
+pigInit(document.getElementById('loginMascot'),'julga');
 render();
 </script>
 </body>
