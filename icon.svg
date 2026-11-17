@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><defs>
+ <radialGradient id="bgA" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="#3b2552"/><stop offset=".55" stop-color="#1a1226"/><stop offset="1" stop-color="#0a0710"/></radialGradient>
+ <radialGradient id="glowA" cx="50%" cy="55%" r="50%"><stop offset="0" stop-color="#ff7aa2" stop-opacity=".45"/><stop offset="1" stop-color="#ff7aa2" stop-opacity="0"/></radialGradient>
+ <radialGradient id="bodyA" cx="38%" cy="30%" r="80%"><stop offset="0" stop-color="#ffe3ea"/><stop offset=".45" stop-color="#ff9fba"/><stop offset="1" stop-color="#d9507a"/></radialGradient>
+ <linearGradient id="earA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb3c7"/><stop offset="1" stop-color="#e2668e"/></linearGradient>
+ <radialGradient id="snA" cx="45%" cy="35%" r="70%"><stop offset="0" stop-color="#ffc4d3"/><stop offset="1" stop-color="#f07899"/></radialGradient>
+ <linearGradient id="coinA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1b8"/><stop offset=".45" stop-color="#ffc83d"/><stop offset="1" stop-color="#d98a00"/></linearGradient>
+</defs>
+<rect width="1024" height="1024" fill="url(#bgA)"/><ellipse cx="512" cy="560" rx="420" ry="360" fill="url(#glowA)"/>
+<ellipse cx="512" cy="815" rx="250" ry="34" fill="#000" opacity=".45"/>
+
+  <g>
+   <path d="M330 600 q-70 -6 -64 -62 q6 -40 46 -26 q24 14 -8 40" fill="none" stroke="url(#earA)" stroke-width="22" stroke-linecap="round"/>
+   <rect x="380" y="690" width="70" height="110" rx="32" fill="url(#earA)"/><rect x="574" y="690" width="70" height="110" rx="32" fill="url(#earA)"/>
+   <path d="M372 372 L345 228 L478 318 Z" fill="url(#earA)" stroke="url(#earA)" stroke-width="34" stroke-linejoin="round"/>
+   <path d="M652 372 L679 228 L546 318 Z" fill="url(#earA)" stroke="url(#earA)" stroke-width="34" stroke-linejoin="round"/>
+   <path d="M382 340 L370 272 L432 316 Z" fill="#c94473" stroke="#c94473" stroke-width="12" stroke-linejoin="round"/>
+   <path d="M642 340 L654 272 L592 316 Z" fill="#c94473" stroke="#c94473" stroke-width="12" stroke-linejoin="round"/>
+   <ellipse cx="512" cy="540" rx="250" ry="215" fill="url(#bodyA)"/>
+   <ellipse cx="440" cy="420" rx="90" ry="40" fill="#fff" opacity=".35" transform="rotate(-24 440 420)"/>
+   <rect x="462" y="326" width="100" height="22" rx="11" fill="#9e2f55" opacity=".85"/>
+   <path d="M412 500 q30 -34 60 0 M552 500 q30 -34 60 0" fill="none" stroke="#3a1426" stroke-width="18" stroke-linecap="round"/>
+   <ellipse cx="512" cy="590" rx="82" ry="58" fill="url(#snA)"/>
+   <ellipse cx="482" cy="590" rx="13" ry="20" fill="#9e2f55"/><ellipse cx="542" cy="590" rx="13" ry="20" fill="#9e2f55"/>
+   <ellipse cx="372" cy="568" rx="44" ry="24" fill="#ff5d88" opacity=".35"/><ellipse cx="652" cy="568" rx="44" ry="24" fill="#ff5d88" opacity=".35"/>
+  </g>
+<g transform="translate(512 236)"><circle r="62" fill="url(#coinA)"/><circle r="44" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="7"/>
+  <text y="22" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="62" fill="#fff" fill-opacity=".9">₲</text></g>
+  <path d="M430 196 q-20 40 0 80 M594 196 q20 40 0 80" stroke="#fff" stroke-opacity=".35" stroke-width="10" fill="none" stroke-linecap="round"/></svg>
