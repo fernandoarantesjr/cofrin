@@ -187,7 +187,13 @@ const local=()=>{try{localStorage.setItem(LKEY,JSON.stringify(S))}catch(e){}};
 const SUPABASE_URL='COLE_AQUI_A_PROJECT_URL';
 const SUPABASE_KEY='COLE_AQUI_A_ANON_PUBLIC_KEY';
 /* ======================================================================== */
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let sb=null;
+try{if(!/^https:\/\//.test(SUPABASE_URL))throw 0;sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){}
+if(!sb){ // sem configuração: mostra o login com aviso em vez de tela vazia
+ setTimeout(()=>{document.getElementById('login').style.display='flex';
+  document.getElementById('lmsg').textContent='Falta conectar o Supabase (URL e chave no index.html).';
+  document.getElementById('lbtn').disabled=true},0);
+}
 const fila={}; // uma escrita por vez em cada registro
 function nuvem(path,data){
  local();
@@ -227,7 +233,7 @@ async function entrar(e){
  if(error)msg.textContent='E-mail ou senha errados.';
 }
 async function sair(){await sb.auth.signOut();try{localStorage.removeItem(LKEY)}catch(e){}location.reload()}
-sb.auth.onAuthStateChange((_ev,session)=>{
+sb&&sb.auth.onAuthStateChange((_ev,session)=>{
  const ok=!!session;
  document.getElementById('login').style.display=ok?'none':'flex';
  document.getElementById('app').style.display=ok?'':'none';
