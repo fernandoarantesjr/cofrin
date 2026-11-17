@@ -15,6 +15,7 @@ create or replace function public.cofrin_liberado() returns boolean
 language sql stable as $$
   select coalesce(auth.jwt() ->> 'email', '') in (
     'fernando@cofrin.app', 'fernando@cofre.app',
+    'luiza@cofrin.app',    'luiza@cofre.app',
     'luiz@cofre.app',      'luiz@cofrin.app'
   );
 $$;
