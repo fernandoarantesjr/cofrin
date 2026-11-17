@@ -72,6 +72,12 @@ async function manha() {
       avisos.push({ title: rot === 'atrasada' ? `Conta atrasada: ${f.nome}` : `${f.nome} ${rot}`, body: `${fmt(f.valor)}${f.quem ? ' · ' + f.quem + ' paga' : ''}. Marque como paga em Contas.`, tag: 'conta-' + f.id + '-' + k, url: './#contas' });
     }
   }
+  // dia 1: retrospectiva do mês que acabou
+  if (hoje.slice(8) === '01') {
+    const ant = addM(m, -1), nome = new Date(ant + '-15T12:00:00Z').toLocaleDateString('pt-BR', { month: 'long', timeZone: 'UTC' });
+    if ((mes(ant).tx || []).some((t) => t.type === 'gasto'))
+      avisos.push({ title: `Sua retrospectiva de ${nome} chegou`, body: 'Quanto gastaram, o maior gasto, a categoria campeã e a nota do porquinho. Toque pra ver.', tag: 'retro-' + ant, url: './#retro' });
+  }
   // dia de salário
   const M = mes(m);
   for (const r of cfg.rendas || []) {
