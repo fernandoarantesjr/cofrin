@@ -24,7 +24,7 @@ Login restrito: só entram os e-mails que você criar.
 ### 3. Criar os 2 logins
 1. **Authentication → Users → Add user → Create new user**.
 2. E-mail: `fernando@cofrin.app`, escolha uma senha forte, marque **Auto Confirm User**.
-3. Repita para `luiz@cofre.app`.
+3. Repita para `luiza@cofrin.app`.
 
 > Os e-mails são fictícios: com *Auto Confirm* nenhum e-mail é enviado.
 
