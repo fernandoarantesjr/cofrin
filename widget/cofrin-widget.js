@@ -57,16 +57,17 @@ function calcular(cfg, meses, hoje) {
 }
 
 // ---------------- dados do Supabase ----------------
-async function pedirLogin() {
+async function pedirLogin(erro) {
   const a = new Alert();
-  a.title = 'Cofrin';
-  a.message = 'Entre com o mesmo e-mail e senha do app. Ficam guardados nas Chaves do iPhone.';
-  a.addTextField('E-mail', Keychain.contains(KC_EMAIL) ? Keychain.get(KC_EMAIL) : '');
+  a.title = erro ? 'Não deu pra entrar' : 'Cofrin';
+  a.message = (erro ? erro + '\n\n' : '') + 'Use o mesmo e-mail e senha do app (ex: fernando@cofrin.app). Ficam guardados nas Chaves do iPhone.';
+  const em = a.addTextField('E-mail', Keychain.contains(KC_EMAIL) ? Keychain.get(KC_EMAIL) : '');
+  try { em.setEmailAddressKeyboard(); } catch (e) {}
   a.addSecureTextField('Senha', '');
-  a.addAction('Salvar'); a.addCancelAction('Cancelar');
+  a.addAction('Entrar'); a.addCancelAction('Cancelar');
   if ((await a.present()) === -1) return false;
-  Keychain.set(KC_EMAIL, a.textFieldValue(0).trim().toLowerCase());
-  Keychain.set(KC_SENHA, a.textFieldValue(1));
+  Keychain.set(KC_EMAIL, a.textFieldValue(0).replace(/\s+/g, '').toLowerCase());
+  Keychain.set(KC_SENHA, a.textFieldValue(1).replace(/^\s+|\s+$/g, ''));
   return true;
 }
 async function buscar() {
@@ -75,8 +76,16 @@ async function buscar() {
   auth.method = 'POST';
   auth.headers = { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' };
   auth.body = JSON.stringify({ email: Keychain.get(KC_EMAIL), password: Keychain.get(KC_SENHA) });
-  const tok = await auth.loadJSON();
-  if (!tok.access_token) throw new Error('login');
+  let tok;
+  try { tok = await auth.loadJSON(); } catch (e) { throw new Error('rede'); }
+  if (!tok.access_token) {
+    const cod = tok.error_code || tok.error || '';
+    const err = new Error('login');
+    err.motivo = cod === 'invalid_credentials' || cod === 'invalid_grant' ? `E-mail ou senha não conferem (${Keychain.get(KC_EMAIL)}).`
+      : cod === 'email_not_confirmed' ? 'Esse e-mail ainda não foi confirmado no Supabase.'
+      : 'O servidor recusou o login: ' + (tok.msg || tok.error_description || cod || 'sem detalhe') + '.';
+    throw err;
+  }
   const r = new Request(`${SUPABASE_URL}/rest/v1/cofrin?select=id,data`);
   r.headers = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + tok.access_token };
   const rows = await r.loadJSON();
@@ -183,12 +192,19 @@ async function rodar() {
     if (!(await pedirLogin())) return;
   }
   let w;
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
+    try { await buscar(); break; }
+    catch (e) {
+      if (config.runsInWidget || String(e.message) !== 'login') break;
+      if (!(await pedirLogin(e.motivo))) return Script.complete();   // no app: mostra o motivo e pede de novo
+    }
+  }
   try {
     const { cfg, meses } = await buscar();
     const r = calcular(cfg, meses, ymd(new Date()));
     w = r.ok ? await montar(r, config.widgetFamily || 'medium') : avisoWidget('Cadastre quem recebe e o dia do salário em Ajustes no app.');
   } catch (e) {
-    w = avisoWidget(String(e.message) === 'login' ? 'Abra o Scriptable e rode o script Cofrin pra entrar com seu e-mail e senha.' : 'Sem conexão agora. Tento de novo em alguns minutos.');
+    w = avisoWidget(String(e.message) === 'login' ? (e.motivo ? e.motivo + ' Abra o Scriptable e rode o script Cofrin.' : 'Abra o Scriptable e rode o script Cofrin pra entrar com seu e-mail e senha.') : 'Sem conexão agora. Tento de novo em alguns minutos.');
     w.refreshAfterDate = new Date(Date.now() + 10 * 60 * 1000);
   }
   if (config.runsInWidget) Script.setWidget(w);
