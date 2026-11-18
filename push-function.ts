@@ -103,6 +103,16 @@ async function manha() {
   return { hoje, avisos: res };
 }
 
+async function noite() {
+  // 21h: só lembra se ninguém lançou nada hoje
+  const hoje = hojePY(), m = hoje.slice(0, 7);
+  const { mes } = await lerDados(m);
+  const M = mes(m);
+  const lancou = (M.tx || []).some((t) => t.date === hoje) || Object.values(M.pagos || {}).some((d) => d === hoje);
+  if (lancou) return { hoje, lembrete: false };
+  return { hoje, lembrete: true, ...(await enviar({ title: 'Lançaram tudo hoje?', body: 'Ninguém anotou nada hoje no Cofrin. Leva 5 segundos: toque e fale o gasto.', tag: 'noite-' + hoje, url: './#lancar' })) };
+}
+
 async function semana() {
   const hoje = hojePY(), ini = hojePY(-6), m = hoje.slice(0, 7);
   const { cfg, mes } = await lerDados(m);
@@ -127,10 +137,10 @@ Deno.serve(async (req) => {
 
   if (acao === 'chave') { await cronToken(); return json({ pub: (await vapid()).pub }); }
 
-  if (acao === 'manha' || acao === 'semana') {
+  if (acao === 'manha' || acao === 'semana' || acao === 'noite') {
     const t = await cronToken();
     if (req.headers.get('x-cron') !== t.token) return json({ erro: 'sem permissão' }, 401);
-    return json(acao === 'manha' ? await manha() : await semana());
+    return json(acao === 'manha' ? await manha() : acao === 'noite' ? await noite() : await semana());
   }
 
   if (acao === 'avisar') {

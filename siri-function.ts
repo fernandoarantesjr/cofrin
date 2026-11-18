@@ -105,6 +105,10 @@ Deno.serve(async (req) => {
 
   const norm = semAcento(String(texto));
   const txs: any[] = [];
+  const emQ = String(email).trim().toLowerCase(), QUEM = emQ.charAt(0).toUpperCase() + emQ.split('@')[0].slice(1);
+  let cotDia = 0;
+  if (its.some((o) => o.tipo === 'receita' && o.brl)) { try { const r = await fetch('https://open.er-api.com/v6/latest/BRL').then((r) => r.json()); cotDia = Math.round(r.rates.PYG) || 0; } catch (_) {} }
+  if (cotDia) cfg.cot = cotDia;
   for (const o of its) {
     const date = hojePY(o.dataOff || 0);
     if (o.tipo === 'receita') {
@@ -129,7 +133,7 @@ Deno.serve(async (req) => {
 
   // grava mês a mês
   const porMes: Record<string, any[]> = {};
-  txs.forEach((t) => (porMes[t.date.slice(0, 7)] ||= []).push(t));
+  txs.forEach((t) => { t.por = QUEM; (porMes[t.date.slice(0, 7)] ||= []).push(t); });
   for (const [m, lista] of Object.entries(porMes)) {
     const { data: row } = await sb.from('cofrin').select('data').eq('id', 'meses/' + m).maybeSingle();
     const M: any = row?.data || { limite: cfg.limite, fixos: JSON.parse(JSON.stringify(cfg.fixos || [])), tx: [], pagos: {} };

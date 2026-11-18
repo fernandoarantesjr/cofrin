@@ -32,3 +32,12 @@ select cron.schedule('cofrin-semana', '0 23 * * 0', $c$
     headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron', (select valor->>'token' from public.cofrin_segredos where id = 'cron')),
     body := '{"acao":"semana"}'::jsonb)
 $c$);
+
+-- 21h (Paraguai): lembrete se ninguém lançou nada no dia
+select cron.unschedule(jobname) from cron.job where jobname = 'cofrin-noite';
+select cron.schedule('cofrin-noite', '0 0 * * *', $c$
+  select net.http_post(
+    url := 'https://thsdxhvikpuhfzcohano.supabase.co/functions/v1/push',
+    headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron', (select valor->>'token' from public.cofrin_segredos where id = 'cron')),
+    body := '{"acao":"noite"}'::jsonb)
+$c$);
